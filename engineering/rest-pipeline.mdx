@@ -1,0 +1,175 @@
+---
+title: REST documentation pipeline
+description: How REST API reference documentation is auto-generated from OpenAPI, including the sync workflow, manual triggers, local development, and pipeline configuration.
+---
+
+The REST documentation pipeline auto-generates Markdown files in `content/rest/` from the OpenAPI description maintained in the [`github/rest-api-description`](https://github.com/github/rest-api-description) repository. The generated pages power the REST API reference at docs.github.com/rest.
+
+## How it works
+
+The pipeline is triggered by the `sync-openapi.yml` GitHub Actions workflow. When the workflow runs, it executes `npm run sync-rest`, which reads the OpenAPI schema and:
+
+- **Creates** new Markdown files for new endpoints
+- **Updates** existing Markdown files when endpoints change
+- **Deletes** Markdown files for removed endpoints
+
+All output lands in the `content/rest/` directory. The workflow then opens a pull request in `github/docs-internal` with the label `github-openapi-bot` so the changes can be reviewed before merging.
+
+## Shared pipeline
+
+The `sync-openapi.yml` workflow runs three pipelines together in a single pull request:
+
+<CardGroup cols={3}>
+  <Card title="REST" icon="code">
+    Generates REST API reference pages. Entrypoint: `npm run sync-rest`
+  </Card>
+  <Card title="GitHub Apps" icon="github">
+    Generates GitHub Apps permission reference pages.
+  </Card>
+  <Card title="Webhooks" icon="webhook">
+    Generates webhook event reference pages. Entrypoint: `npm run sync-webhooks`
+  </Card>
+</CardGroup>
+
+<Warning>
+  Because all three pipelines share the same workflow, you cannot run REST independently of Webhooks and GitHub Apps in the automated workflow. In local development you can run each script separately.
+</Warning>
+
+## Triggering the workflow
+
+### Scheduled runs
+
+The workflow runs automatically on a daily schedule. PRs created by the workflow carry the `github-openapi-bot` label.
+
+### Triggering manually (from `main`)
+
+To sync sooner than the next scheduled run, trigger the workflow manually from the Actions tab using the default input options. This pulls from the `main` branch of `github/rest-api-description`.
+
+<Steps>
+  <Step title="Open the workflow">
+    Go to the `sync-openapi.yml` workflow in the `github/docs-internal` Actions tab.
+  </Step>
+  <Step title="Click Run workflow">
+    Leave the source branch input as `main` and click **Run workflow**.
+  </Step>
+  <Step title="Review the pull request">
+    The workflow opens a new pull request in `github/docs-internal` with the `github-openapi-bot` label.
+  </Step>
+</Steps>
+
+### Triggering for an unmerged PR in rest-api-description
+
+If you need to propagate OpenAPI changes from a pull request that has not yet merged into `github/rest-api-description`:
+
+<Steps>
+  <Step title="Open the workflow">
+    Go to the `sync-openapi.yml` workflow in the `github/docs-internal` Actions tab.
+  </Step>
+  <Step title="Enter the source branch">
+    Provide the **branch name** from the unmerged pull request in `github/rest-api-description` as the source branch input.
+  </Step>
+  <Step title="Run the workflow">
+    Click **Run workflow**. The resulting pull request in `github/docs-internal` will contain docs based on that unmerged branch.
+  </Step>
+</Steps>
+
+## Running the pipeline locally
+
+Use local development to preview REST documentation changes before triggering the automated workflow.
+
+<Steps>
+  <Step title="Clone rest-api-description inside your docs-internal directory">
+    ```bash
+    git clone https://github.com/github/rest-api-description
+    ```
+
+    The repository must be cloned at the root of your `docs-internal` working directory (not in a subdirectory).
+  </Step>
+  <Step title="Set a GitHub token in .env">
+    ```bash
+    GITHUB_TOKEN=<your-classic-token>
+    ```
+
+    The token requires `repo` scopes. If you are a GitHub employee, enable SSO for the `github` organization on the token.
+  </Step>
+  <Step title="Run the sync script">
+    ```bash
+    npm run sync-rest -- -s rest-api-description models-gateway -o rest
+    ```
+
+    The `-s` flag specifies the source directory (the cloned repo), and `-o rest` specifies the output pipeline. The `-o rest` flag is the default and can be omitted.
+  </Step>
+</Steps>
+
+To run the Webhooks pipeline locally:
+
+```bash
+npm run sync-webhooks
+```
+
+## Pipeline configuration
+
+The file `src/rest/lib/config.json` controls the behavior of the REST pipeline. Edit this file to configure version mappings and index ordering.
+
+| Property | Description |
+|---|---|
+| `api-versions` | Calendar-date API versions available for each docs version |
+| `versionMapping` | Maps OpenAPI version names (from `github/rest-api-description`) to the short names used in `docs-internal` |
+| `frontmatterDefaults` | Default frontmatter values added to every generated Markdown file in `content/rest/` |
+| `targetDirectory` | The directory inside `content/` where generated Markdown files are written |
+| `indexOrder` | Controls the order of child directories in `content/rest/index.md`. Use `startsWith` to pin directories to the top; all other directories are appended |
+| `sha` | The commit SHA from `github/rest-api-description` used to generate the current data. Updated automatically on each pipeline run |
+
+## Generated files
+
+| Path | Description |
+|---|---|
+| `src/rest/data/` | Auto-generated data files produced by the pipeline. Do not edit manually. |
+| `content/rest/` | Auto-generated Markdown reference pages served to users. |
+| `src/rest/lib/config.json` | Pipeline configuration file. Edit to adjust version mappings and ordering. |
+| `src/rest/scripts/update-files.ts` | Entrypoint script for the REST pipeline (`npm run sync-rest`). |
+
+## Content team guidance
+
+Content writers can manually edit certain parts of generated Markdown files in `content/rest/`:
+
+- **Any frontmatter except `versions`** — The pipeline overwrites `versions` on each run but does not touch other frontmatter fields.
+- **Introduction paragraphs** — Add content *above* the following comment in the file:
+
+  ```markdown
+  <!-- Content after this section is automatically generated -->
+  ```
+
+  Content below this comment is replaced on each pipeline run.
+
+<Note>
+  When a new Markdown file is first created by the pipeline, it receives all frontmatter properties from `frontmatterDefaults` in `config.json`. Writers can then customize any frontmatter field except `versions`.
+</Note>
+
+## Monitoring and escalation
+
+PRs created by the automated workflow carry the `github-openapi-bot` label. The `sha` field in `src/rest/lib/config.json` tracks which commit from `github/rest-api-description` was used to generate the current docs, providing an audit trail.
+
+If the pipeline fails:
+
+<Steps>
+  <Step title="Check workflow logs">
+    Review the failed run in `.github/workflows/sync-openapi.yml`.
+  </Step>
+  <Step title="Verify repo access">
+    Confirm that the workflow has access to `github/rest-api-description`.
+  </Step>
+  <Step title="Check for schema validation errors">
+    Look for OpenAPI schema validation errors in the workflow output.
+  </Step>
+  <Step title="Review config.json">
+    Check `src/rest/lib/config.json` for version mapping issues, especially after a new API version is introduced.
+  </Step>
+  <Step title="Escalate if needed">
+    For issues with the OpenAPI schema itself, escalate to the API Platform team via the `#api-platform` Slack channel.
+  </Step>
+</Steps>
+
+**Ownership:**
+- Pipeline failures → `#docs-engineering` Slack or open an issue in `github/docs-engineering`
+- OpenAPI schema issues → `#api-platform` Slack (API Platform team owns `github/rest-api-description`)

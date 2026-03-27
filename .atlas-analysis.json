@@ -1,23 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "GitHub Docs",
+  "projectType": "saas",
+  "projectName": "GitHub Docs",
+  "projectDescription": "The open-source documentation platform powering docs.github.com, enabling contributors to write, version, and publish GitHub's official product documentation.",
   "theme": "maple",
-  "colors": {
-    "primary": "#663ebc",
-    "light": "#b49cdc"
-  },
-  "favicon": "https://media.brand.dev/a0ca72a6-2953-42f7-a6b6-1f31dd082a6a.png",
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/github/docs"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/github/docs"
-    }
-  },
+  "primaryColor": "#663ebc",
+  "lightColor": "#b49cdc",
+  "darkColor": null,
   "navigation": {
     "tabs": [
       {
@@ -111,5 +99,27 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "Markdown-based content with Liquid templating for versioning and conditional rendering",
+    "Multi-version documentation supporting GitHub.com, GitHub Enterprise Server, and GitHub Enterprise Cloud",
+    "Automated REST, GraphQL, and Webhook API documentation pipelines from OpenAPI specs",
+    "Full-text search powered by Elasticsearch",
+    "Content linting with markdownlint and custom rules to enforce style and quality",
+    "Internationalization with automated translation workflows across multiple languages",
+    "Next.js/Express server with dynamic content generation and HTTP redirects",
+    "GitHub Codespaces integration for browser-based contribution"
+  ],
+  "publicApiSurface": [
+    "GET /api/pageinfo — Page metadata endpoint",
+    "GET /search — Full-text search across docs content",
+    "GET /en/rest/* — Auto-generated REST API reference pages",
+    "GET /en/graphql/* — GraphQL API reference pages",
+    "GET /en/webhooks/* — Webhook reference pages",
+    "Frontmatter: versions, title, shortTitle, intro, contentType, redirect_from",
+    "Liquid tags: ifversion, data, octicon, tool, platform",
+    "npm run lint-content — Content linting script",
+    "npm run sync-rest — REST API documentation sync pipeline",
+    "npm run sync-graphql — GraphQL documentation sync pipeline"
+  ]
 }

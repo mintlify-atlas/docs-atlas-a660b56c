@@ -1,0 +1,217 @@
+---
+title: Versioning documentation
+description: How GitHub Docs controls which content appears for each product version using frontmatter and Liquid conditionals.
+---
+
+GitHub Docs serves content for multiple product versions from a single source tree. Two independent mechanisms work together to version content: the `versions` frontmatter field restricts which versions include a given page, and Liquid conditionals inside the page body conditionally render specific paragraphs, sentences, or code blocks.
+
+## Product versions
+
+GitHub Docs recognizes three top-level product versions:
+
+| Version key | Product |
+|---|---|
+| `fpt` | GitHub.com free, pro, and team plans (free-pro-team) |
+| `ghes` | GitHub Enterprise Server |
+| `ghec` | GitHub Enterprise Cloud |
+
+A page that applies to all versions includes all three keys. A page that applies only to GitHub Enterprise Server omits `fpt` and `ghec`.
+
+<Note>
+  As of early 2021, `fpt` URLs do not include the version segment. A helper function (`src/versions/lib/remove-fpt-from-path.ts`) strips `free-pro-team@latest` from rendered URLs automatically. Links to `fpt` content do not require version prefixes.
+</Note>
+
+## The `versions` frontmatter field
+
+The `versions` field is **required** on every page. Its value is an object whose keys are version identifiers. The value for each key is a semver range expression that controls which releases of that version include the page.
+
+Use `'*'` to include all releases of a version:
+
+```yaml
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+```
+
+## Version range examples
+
+<CodeGroup>
+
+```yaml GitHub.com only
+title: About your personal dashboard
+versions:
+  fpt: '*'
+  ghec: '*'
+```
+
+```yaml GitHub Enterprise Server only
+title: Downloading your license
+versions:
+  ghes: '*'
+```
+
+```yaml GitHub.com and recent GHES releases
+title: About your personal dashboard
+versions:
+  fpt: '*'
+  ghes: '>=2.20'
+  ghec: '*'
+```
+
+```yaml Specific GHES range
+title: Some transitional feature
+versions:
+  fpt: '*'
+  ghes: '>=2.22 <3.1'
+```
+
+</CodeGroup>
+
+Range expressions use the [semver](https://semver.org/) format:
+
+| Expression | Meaning |
+|---|---|
+| `'*'` | All releases |
+| `'>=3.0'` | Version 3.0 and later |
+| `'>=2.22 <3.1'` | Versions 2.22, 2.23, and 3.0, but not 3.1 |
+
+## Liquid version conditionals
+
+Within the body of a page, use `{% ifversion %}` to conditionally render content. Liquid conditionals are processed at render time based on the version the reader is currently viewing.
+
+### Basic conditional
+
+```liquid
+{% ifversion ghes %}
+This content only appears when reading GitHub Enterprise Server documentation.
+{% endif %}
+```
+
+### Conditional with else
+
+```liquid
+{% ifversion fpt or ghec %}
+You can manage billing from your account settings on GitHub.com.
+{% else %}
+Contact your site administrator to manage your license.
+{% endif %}
+```
+
+### Multi-branch conditional
+
+```liquid
+{% ifversion fpt %}
+This is GitHub.com free, pro, or team content.
+{% elsif ghec %}
+This is GitHub Enterprise Cloud content.
+{% elsif ghes %}
+This is GitHub Enterprise Server content.
+{% endif %}
+```
+
+### Version range in Liquid
+
+```liquid
+{% ifversion ghes >= 3.4 %}
+This feature was introduced in GitHub Enterprise Server 3.4.
+{% endif %}
+```
+
+```liquid
+{% ifversion ghes < 3.6 %}
+This note only appears for older Enterprise Server releases.
+{% endif %}
+```
+
+### Combining version checks
+
+Use `or` and `and` to combine version conditions:
+
+```liquid
+{% ifversion fpt or ghec %}
+Available on GitHub.com and GitHub Enterprise Cloud.
+{% endif %}
+```
+
+```liquid
+{% ifversion ghes and ghes >= 3.5 %}
+Available on GitHub Enterprise Server 3.5 and later.
+{% endif %}
+```
+
+## Choosing between frontmatter and Liquid conditionals
+
+<AccordionGroup>
+  <Accordion title="Use versions frontmatter when...">
+    The **entire page** only applies to certain versions. If a page describes a feature that does not exist on GitHub Enterprise Server at all, exclude the `ghes` key from `versions`. Readers on a GHES-scoped docs site will receive a 404 rather than landing on an irrelevant page.
+  </Accordion>
+  <Accordion title="Use Liquid conditionals when...">
+    **Part of a page** varies by version. If a feature works on all versions but the UI differs, keep the page visible to all versions and use `{% ifversion %}` blocks around the version-specific paragraphs or steps.
+  </Accordion>
+</AccordionGroup>
+
+## Feature-based versioning
+
+For features that span multiple product versions but shipped at different times across those versions, you can define a named feature flag in `data/features/` rather than repeating a complex version expression everywhere. The feature file specifies a `versions` object using the same semver syntax, and pages reference it by name:
+
+```yaml
+# data/features/my-feature.yml
+versions:
+  fpt: '*'
+  ghes: '>=3.6'
+  ghec: '*'
+```
+
+```liquid
+{% ifversion my-feature %}
+Content for versions where my-feature is available.
+{% endif %}
+```
+
+## Linking across versions
+
+### Linking to the same article in a different version
+
+Use the `currentArticle` property to create a version-aware cross-link. The link remains valid even if the article URL changes:
+
+```liquid
+{% ifversion fpt %}
+For more information, see the [{% data variables.product.prodname_ghe_cloud %} documentation](/enterprise-cloud@latest/{{ currentArticle }}).
+{% endif %}
+```
+
+### Preventing link transformation
+
+By default, internal links are rewritten to match the reader's current version. To pin a link to a specific version — for example, linking to a GitHub.com-only terms page from Enterprise content — include the version in the path:
+
+```markdown
+[GitHub's Terms of Service](/free-pro-team@latest/github/site-policy/github-terms-of-service)
+```
+
+## Versioning reusables and variables
+
+Liquid conditionals can appear inside reusable Markdown files under `data/reusables/` and inside variable YAML values in `data/variables/`. This allows a single reusable or variable to render different text depending on the current version.
+
+Example from `data/variables/product.yml`:
+
+```yaml
+prodname_container_registry_namespace: >-
+  {% ifversion fpt or ghec %}`ghcr.io`{% elsif ghes %}<code>containers.<em>HOSTNAME</em></code>{% endif %}
+```
+
+When this variable is referenced in content, it automatically resolves to the correct value for the current version context.
+
+## Versioning tables and lists
+
+When versioning individual rows in a table or items in a list, use [whitespace control](/content/markdown-and-liquid#whitespace-control) to avoid introducing stray newlines that break Markdown rendering:
+
+```markdown
+| Feature | Available |
+|---|---|
+| Code scanning | Yes |
+{%- ifversion ghes >= 3.5 %}
+| Secret scanning | Yes |
+{%- endif %}
+| Dependabot alerts | Yes |
+```

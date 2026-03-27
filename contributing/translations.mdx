@@ -1,0 +1,100 @@
+---
+title: "Translations"
+description: "How GitHub Docs handles translations, which languages are supported, and what external contributors can do."
+---
+
+GitHub Docs is internationalized and available in multiple languages. This page explains how the translation process works, which content gets translated, and what role external contributors play.
+
+## How translations work
+
+English is the source of truth for all GitHub Docs content. The translation pipeline is automated and managed internally by GitHub, working with professional translators to localize English content into supported languages.
+
+<Note>
+  **Translated content is not accepted as external contributions.** Pull requests that modify files in translated language directories will not be merged. If you want to help improve GitHub Docs, contribute to the English source content in `/content` instead.
+</Note>
+
+The general flow is:
+
+<Steps>
+  <Step title="English content is authored">
+    Writers create or update content in English under the `/content` directory in `github/docs`. This is the canonical version of every document.
+  </Step>
+  <Step title="Content is picked up for translation">
+    The automated pipeline detects new or changed English content and sends it to professional translators for localization.
+  </Step>
+  <Step title="Translated content is published">
+    Completed translations are published to the localized versions of docs.github.com (for example, `docs.github.com/ja` for Japanese).
+  </Step>
+</Steps>
+
+## Supported languages
+
+GitHub Docs supports multiple languages. The set of enabled languages is controlled by the `ENABLED_LANGUAGES` environment variable in the application. At the time of writing, supported languages include:
+
+| Language | Code |
+|----------|------|
+| English | `en` |
+| Chinese (Simplified) | `zh` |
+| Japanese | `ja` |
+| Spanish | `es` |
+| Portuguese (Brazil) | `pt` |
+| French | `fr` |
+| Russian | `ru` |
+| Korean | `ko` |
+| German | `de` |
+
+The English (`en`) locale is always enabled and serves as the source of truth. Other languages are enabled as translations become available.
+
+## What gets translated
+
+Not all content in the repository is translated. The translation pipeline covers:
+
+- All files in `/content`
+- `/data/release-notes`
+- `/data/reusables`
+- `/data/variables` (except `/data/variables/product.yml`)
+- `/data/glossaries/external.yml`
+- `/data/product-examples`
+
+Files outside these paths — such as scripts, application code, and workflow configuration — are not translated.
+
+## Translation guidelines for the pipeline
+
+The internal translation process follows these rules, which also apply to the automated tooling:
+
+- Liquid tags such as `{% data %}`, `{% ifversion ... %}`, `{% note %}`, and `{{ someVariable }}` are **never translated**. Only the surrounding prose is localized.
+- Frontmatter properties `title`, `shortTitle`, `intro`, and `permissions` are translated. All other frontmatter keys remain in English.
+- Every `{% ifversion ... %}` tag must have a matching `{% endif %}`.
+- All `.yml` files must remain valid YAML after translation.
+- Frontmatter blocks must remain valid YAML after translation.
+
+<Warning>
+  If you notice that Liquid tags, code samples, or frontmatter keys have been incorrectly modified in a translated page, this is a translation pipeline issue. Do not open a pull request to fix it — report it as an issue instead so the team can address it upstream.
+</Warning>
+
+## What external contributors can do
+
+External contributors cannot submit translated content, but they can help improve the translations indirectly:
+
+<CardGroup cols={2}>
+  <Card title="Improve the English source" icon="pen-to-square" href="/contributing/pull-requests">
+    Clear, well-structured English content produces better translations. Contributing improvements to the English source benefits all languages.
+  </Card>
+  <Card title="Report translation issues" icon="circle-exclamation" href="https://github.com/github/docs/issues/new/choose">
+    If you find a translation that is inaccurate, missing, or contains untranslated Liquid tags, open an issue to report it.
+  </Card>
+</CardGroup>
+
+## Localized site URLs
+
+Translated versions of GitHub Docs are available at language-prefixed URLs:
+
+```
+https://docs.github.com/en   # English (default)
+https://docs.github.com/ja   # Japanese
+https://docs.github.com/zh   # Chinese (Simplified)
+https://docs.github.com/es   # Spanish
+https://docs.github.com/pt   # Portuguese (Brazil)
+```
+
+Users can switch languages using the language picker on any docs.github.com page.

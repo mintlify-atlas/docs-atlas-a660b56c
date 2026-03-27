@@ -1,0 +1,80 @@
+---
+title: "Introduction"
+description: "GitHub Docs is the open-source platform behind docs.github.com. Learn what it is, how the two repositories work together, and how you can contribute."
+---
+
+GitHub Docs is the open-source content and platform that powers [docs.github.com](https://docs.github.com) — GitHub's official product documentation. The site covers everything from getting started guides to deep dives on the GitHub API, Actions, Codespaces, and more. The platform itself is a Node.js application built on Express and Next.js, and the content is written in Markdown with Liquid templating.
+
+## Two repositories, one site
+
+The GitHub Docs project is split across two repositories that sync frequently:
+
+<Columns cols={2}>
+  <Card title="github/docs" icon="lock-open" href="https://github.com/github/docs">
+    **Public.** Open to external contributions. Accepts edits to Markdown content files in `/content` and select `/data` sections (reusables and variables). Infrastructure code, workflows, and site-building logic are not open for external modification.
+  </Card>
+  <Card title="github/docs-internal" icon="lock" href="https://github.com/github/docs-internal">
+    **Private.** For GitHub employees. Internal contributions — new features, platform changes, early-access content — should go here. Changes flow to `github/docs` through an automated sync.
+  </Card>
+</Columns>
+
+<Note>
+  Content changes made in either repository are reflected in the other through frequent automated syncs. If you are a GitHub employee working with a customer, you can use `github/docs`, but most internal work should go to `github/docs-internal`.
+</Note>
+
+## Who can contribute
+
+<Tabs>
+  <Tab title="Open source contributors">
+    Anyone outside GitHub can contribute to `github/docs`. The most common contributions are:
+
+    - Fixing typos and grammatical errors
+    - Improving clarity or accuracy of existing articles
+    - Adding missing information to an existing topic
+    - Updating outdated content
+
+    External contributors work with `.md` files in `/content` and select files in `/data/reusables` and `/data/variables`. Pull requests to infrastructure files, CI workflows, or application source code (`/src`) will not be accepted.
+
+    See the [contribution guidelines](https://docs.github.com/en/contributing) for full details, including style expectations and the review process.
+  </Tab>
+  <Tab title="GitHub employees (Hubbers)">
+    GitHub employees contribute through `github/docs-internal`. See the [CONTRIBUTING.md](https://github.com/github/docs-content/blob/main/CONTRIBUTING.md) in the `docs-content` repository for GitHub-specific processes, including how to file issues, request reviews, and work with the Docs Content team.
+
+    Hubbers may also post to `github/docs` when collaborating with external contributors or community members, but internal content changes should generally target `docs-internal`.
+  </Tab>
+</Tabs>
+
+## What lives in this repo
+
+The `github/docs` repository is organized into a few key top-level directories:
+
+| Directory | Purpose |
+|-----------|---------|
+| `/content` | All English Markdown documentation, organized by product |
+| `/data` | Reusables, variables, learning tracks, GraphQL data, and more |
+| `/src` | Application source code (Node.js, Express, Next.js) organized by subject folders |
+| `/contributing` | Contributor guides (largely superseded by [docs.github.com/en/contributing](https://docs.github.com/en/contributing)) |
+
+## Licensing
+
+The project is dual-licensed:
+
+- **Creative Commons Attribution 4.0** — documentation and content in `assets/`, `content/`, and `data/`
+- **MIT License** — application source code
+
+## Explore further
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Set up a local development environment and make your first content edit.
+  </Card>
+  <Card title="Site architecture" icon="sitemap" href="/site-architecture">
+    Understand how the repository is structured — content, data, and application source.
+  </Card>
+  <Card title="Content model" icon="file-lines" href="/content/content-model">
+    Learn how articles are organized, typed, and connected on docs.github.com.
+  </Card>
+  <Card title="Pull requests" icon="code-pull-request" href="/contributing/pull-requests">
+    Follow the contribution workflow to get your changes reviewed and merged.
+  </Card>
+</CardGroup>

@@ -1,0 +1,273 @@
+---
+title: Reusables and variables
+description: How to use, create, and choose between reusable content blocks and short string variables in GitHub Docs.
+---
+
+GitHub Docs manages shared content through two complementary systems: **reusables** for multi-sentence blocks like paragraphs and procedural steps, and **variables** for short strings like product names and URLs. Both are stored under `data/` and inserted into content files using the `{% data %}` Liquid tag.
+
+## How they differ
+
+| | Reusables | Variables |
+|---|---|---|
+| Location | `data/reusables/<category>/<filename>.md` | `data/variables/<filename>.yml` |
+| Format | Markdown file (one reusable per file) | YAML file (multiple variables per file) |
+| Content type | Paragraphs, steps, lists, tables | Short strings, product names, URLs |
+| Reference syntax | `{% data reusables.category.filename %}` | `{% data variables.file.key %}` |
+
+## Variables
+
+Variables are short strings stored in YAML files under `data/variables/`. Each file groups related variables together. The path to a variable in the `{% data %}` tag matches the directory path and key within the YAML file.
+
+### Referencing variables
+
+Given the file structure:
+
+```
+data/
+  variables/
+    product.yml
+    actions.yml
+```
+
+Variables are referenced as:
+
+```liquid
+{% data variables.product.prodname_actions %}
+{% data variables.product.prodname_ghe_cloud %}
+{% data variables.actions.hosted_runner %}
+```
+
+### Product name variables
+
+The most commonly used variables are in `data/variables/product.yml`. Use these consistently instead of hardcoding product names — they allow for centralized updates and correct localization.
+
+<AccordionGroup>
+  <Accordion title="GitHub platform variables">
+
+| Variable | Renders as | When to use |
+|---|---|---|
+| `variables.product.github` | GitHub | Generic reference to the GitHub platform. |
+| `variables.product.prodname_dotcom` | GitHub | Deprecated alias for `github`. Prefer `github`. |
+| `variables.product.prodname_dotcom_the_website` | GitHub.com | When the `.com` domain specifically matters. |
+| `variables.product.prodname_enterprise` | GitHub Enterprise | Any GitHub Enterprise product. |
+| `variables.product.prodname_ghe_server` | GitHub Enterprise Server | GHES specifically. |
+| `variables.product.prodname_ghe_cloud` | GitHub Enterprise Cloud | GHEC specifically. |
+
+  </Accordion>
+  <Accordion title="Product feature variables">
+
+| Variable | Renders as |
+|---|---|
+| `variables.product.prodname_actions` | GitHub Actions |
+| `variables.product.prodname_codespaces` | Codespaces |
+| `variables.product.prodname_github_codespaces` | GitHub Codespaces |
+| `variables.product.prodname_copilot` | GitHub Copilot |
+| `variables.product.prodname_cli` | GitHub CLI |
+| `variables.product.prodname_desktop` | GitHub Desktop |
+| `variables.product.prodname_pages` | GitHub Pages |
+| `variables.product.prodname_registry` | GitHub Packages |
+| `variables.product.prodname_GHAS` | GitHub Advanced Security |
+| `variables.product.prodname_dependabot` | Dependabot |
+| `variables.product.prodname_discussions` | GitHub Discussions |
+| `variables.product.prodname_sponsors` | GitHub Sponsors |
+
+  </Accordion>
+  <Accordion title="Version-aware variables">
+    Some variables use `{% ifversion %}` internally to return different strings depending on the current version context. For example:
+
+```yaml
+# data/variables/product.yml
+prodname_container_registry_namespace: >-
+  {% ifversion fpt or ghec %}`ghcr.io`{% elsif ghes %}<code>containers.<em>HOSTNAME</em></code>{% endif %}
+```
+
+When referenced as `{% data variables.product.prodname_container_registry_namespace %}`, this renders `ghcr.io` on GitHub.com and a hostname-relative URL on GitHub Enterprise Server.
+  </Accordion>
+</AccordionGroup>
+
+### Creating a new variable
+
+<Steps>
+  <Step title="Choose or create a YAML file">
+    Find the relevant file in `data/variables/` (for example, `product.yml` for product names, `actions.yml` for Actions-specific strings). Create a new file only if no existing file fits the category.
+  </Step>
+  <Step title="Add the key-value pair">
+    Add a descriptive key and its string value:
+
+    ```yaml
+    # data/variables/product.yml
+    prodname_my_new_feature: 'GitHub My New Feature'
+    ```
+
+    For nested variables:
+
+    ```yaml
+    # data/variables/foo/bar.yml
+    nested:
+      values:
+        label: 'My Label'
+    ```
+
+    Reference nested variables as `{% data foo.bar.nested.values.label %}`.
+  </Step>
+  <Step title="Reference it in content">
+    Use the `{% data %}` tag with the full dotted path:
+
+    ```liquid
+    {% data variables.product.prodname_my_new_feature %}
+    ```
+  </Step>
+</Steps>
+
+## Reusables
+
+Reusables are longer Markdown content blocks — paragraphs, steps, tables — that appear in multiple articles. Each reusable lives in its own `.md` file under `data/reusables/`.
+
+### Referencing reusables
+
+Given the file `data/reusables/repositories/navigate-to-repo.md`, reference it as:
+
+```liquid
+{% data reusables.repositories.navigate-to-repo %}
+```
+
+The dotted path maps directly to the directory structure and filename (without the `.md` extension).
+
+### Real examples
+
+Common reusables used throughout the GitHub Docs source:
+
+```liquid
+{% data reusables.repositories.navigate-to-repo %}
+{% data reusables.repositories.actions-tab %}
+{% data reusables.actions.enterprise-github-hosted-runners %}
+{% data reusables.cli.cli-learn-more %}
+```
+
+A reusable file can contain any valid Markdown, including Liquid conditionals:
+
+```markdown
+<!-- data/reusables/repositories/about-READMEs.md -->
+You can add a README file to a repository to communicate important information about your project. A README, along with a repository license{% ifversion fpt or ghec %}, contribution guidelines, and a code of conduct{% elsif ghes %} and contribution guidelines{% endif %}, communicates expectations for your project.
+```
+
+### Reusables in ordered lists
+
+When a reusable appears as a step inside an ordered list, use `indented_data_reference` with a `spaces` argument to preserve list indentation:
+
+```markdown
+1. Navigate to your repository.
+{% indented_data_reference reusables.repositories.actions-tab spaces=3 %}
+1. Click **New workflow**.
+```
+
+The `spaces` value is the number of spaces the reusable lines should be indented, matching the list item indentation level.
+
+### Creating a new reusable
+
+<Steps>
+  <Step title="Identify the right directory">
+    Reusables are organized by task or product area. Look in `data/reusables/` for a directory that fits your content. For example:
+
+    - `data/reusables/actions/` for GitHub Actions steps
+    - `data/reusables/repositories/` for repository navigation steps
+    - `data/reusables/organizations/` for organization management steps
+
+    Create a new directory only if no existing directory fits.
+  </Step>
+  <Step title="Create the Markdown file">
+    Create a new `.md` file with a descriptive kebab-case name:
+
+    ```
+    data/reusables/notifications/your-reusable-name.md
+    ```
+  </Step>
+  <Step title="Write the content">
+    Write valid Markdown. You can use Liquid variables and conditionals inside reusables:
+
+    ```markdown
+    Before you begin, ensure that {% data variables.product.prodname_cli %} version 2.0 or later is installed. Run `gh --version` to check.
+    ```
+  </Step>
+  <Step title="Reference it in content">
+    Add the `{% data %}` tag wherever the reusable should appear:
+
+    ```liquid
+    {% data reusables.notifications.your-reusable-name %}
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Do not edit a reusable without checking all articles that reference it. Changes affect every page that includes the reusable. Search the `content/` directory for `reusables.your.reusable-name` before making modifications.
+</Warning>
+
+## When to use reusables vs. variables
+
+<CardGroup cols={2}>
+  <Card title="Use a variable" icon="tag">
+    - Product names and trademarked strings
+    - Short UI labels that appear inline in sentences
+    - URLs that may change across versions
+    - Strings fewer than one sentence long
+
+    ```liquid
+    {% data variables.product.prodname_actions %}
+    {% data variables.product.prodname_ghe_cloud %}
+    ```
+  </Card>
+  <Card title="Use a reusable" icon="file-lines">
+    - Navigation steps repeated across multiple how-to articles
+    - Prerequisite paragraphs shared by related articles
+    - Permission statements used by multiple pages
+    - Any content block longer than one sentence
+
+    ```liquid
+    {% data reusables.repositories.navigate-to-repo %}
+    {% data reusables.cli.cli-learn-more %}
+    ```
+  </Card>
+</CardGroup>
+
+## Versioning reusables and variables
+
+Both reusables and variable values support Liquid version conditionals. This lets a single shared string serve all versions without duplicating files.
+
+### Versioned variable value
+
+```yaml
+# data/variables/product.yml
+login_url: >-
+  {%- ifversion fpt or ghec %}
+  [`https://github.com/login`](https://github.com/login)
+  {%- elsif ghes %}
+  `http(s)://HOSTNAME/login`
+  {%- endif %}
+```
+
+### Versioned reusable content
+
+```markdown
+<!-- data/reusables/repositories/about-READMEs.md -->
+You can add a README file to a repository to communicate important information about your project. A README, along with a repository license, citation file{% ifversion fpt or ghec %}, contribution guidelines, and a code of conduct{% elsif ghes %} and contribution guidelines{% endif %}, communicates expectations for your project and helps you manage contributions.
+```
+
+Reusables that include Liquid conditionals inherit their version context from the page that includes them — the same version the reader is currently viewing.
+
+## Directory structure reference
+
+```
+data/
+├── variables/
+│   ├── product.yml          # Product names, URLs
+│   ├── actions.yml          # GitHub Actions strings
+│   ├── codespaces.yml       # Codespaces strings
+│   ├── copilot.yml          # Copilot strings
+│   └── ...
+└── reusables/
+    ├── repositories/        # Repo navigation steps
+    ├── actions/             # Actions-specific steps
+    ├── organizations/       # Org management steps
+    ├── cli/                 # CLI learn-more notes
+    └── ...
+```

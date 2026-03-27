@@ -1,80 +1,194 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Clone the github/docs repository, install dependencies, start the local dev server, make a content edit, and open a pull request — all in a few minutes."
 ---
 
-## Get started in three steps
+This guide walks you through setting up a local development environment for the GitHub Docs project and making your first content contribution. The full site runs locally at `localhost:4000` so you can preview changes before opening a pull request.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+<Columns cols={2}>
+  <Card title="Node.js v24" icon="node-js">
+    The site requires Node.js `^24`. Download the LTS installer from [nodejs.org](https://nodejs.org) or use a version manager like [`nodenv`](https://github.com/nodenv/nodenv). The required version is specified in `package.json`.
+  </Card>
+  <Card title="Git" icon="code-branch">
+    You'll need Git to clone the repository and manage branches. See the [Set up Git](https://docs.github.com/en/get-started/git-basics/set-up-git) guide if you're starting from scratch.
+  </Card>
+</Columns>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Set up your environment
 
-### Step 2: Deploy your changes
+<Steps>
+  <Step title="Fork and clone the repository">
+    Fork `github/docs` on GitHub, then clone your fork locally:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    git clone https://github.com/YOUR-USERNAME/docs
+    cd docs
+    ```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    If you only want to read the source without contributing, you can clone the upstream directly:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    git clone https://github.com/github/docs
+    cd docs
+    ```
+  </Step>
 
-### Step 3: Go live
+  <Step title="Install dependencies">
+    Install all Node.js dependencies using a clean install. This does not modify `package-lock.json`:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```bash
+    npm ci
+    ```
+
+    <Note>
+      Run `npm ci` again any time you pull new changes from the remote — dependency versions may have been updated.
+    </Note>
+  </Step>
+
+  <Step title="Build static assets">
+    Generate the JavaScript and CSS bundles needed by the application:
+
+    ```bash
+    npm run build
+    ```
+
+    You only need to run this once per branch checkout. It does not need to be re-run when you edit Markdown content.
+  </Step>
+
+  <Step title="Start the development server">
+    Start the local Node.js/Express server:
+
+    ```bash
+    npm start
+    ```
+
+    Open [http://localhost:4000](http://localhost:4000) in your browser. You should see the full docs site running locally.
+
+    To stop the server, press `Ctrl+C` in your terminal.
+  </Step>
+</Steps>
+
+<Tip>
+  Prefer working in the browser? Use [GitHub Codespaces](https://docs.github.com/en/codespaces/quickstart) to get a fully configured environment in minutes — no local installation required. Open the `github/docs` repo and click **Code > Codespaces > New codespace**.
+</Tip>
+
+## Make your first content edit
+
+All English documentation lives in the `/content` directory, organized by product. Files are written in Markdown and use [YAML frontmatter](https://docs.github.com/en/contributing/syntax-and-versioning-for-github-docs/using-markdown-and-liquid-in-github-docs) and [Liquid templating](https://docs.github.com/en/contributing/syntax-and-versioning-for-github-docs/using-markdown-and-liquid-in-github-docs).
+
+<Steps>
+  <Step title="Create a new branch">
+    Always work on a dedicated branch, not on `main`:
+
+    ```bash
+    git checkout -b my-content-fix
+    ```
+  </Step>
+
+  <Step title="Find and edit a content file">
+    Navigate to the relevant file under `content/`. For example, to edit the GitHub CLI overview:
+
+    ```
+    content/
+    └── github-cli/
+        └── github-cli/
+            └── about-github-cli.md
+    ```
+
+    Every content file starts with frontmatter:
+
+    ```markdown
+    ---
+    title: About GitHub CLI
+    intro: 'You can use GitHub CLI to work with GitHub from the command line.'
+    versions:
+      fpt: '*'
+      ghes: '*'
+      ghec: '*'
+    ---
+    ```
+
+    Edit the Markdown body below the frontmatter. The dev server does **not** hot-reload content — refresh your browser at `localhost:4000` to see changes.
+  </Step>
+
+  <Step title="Run the content linter">
+    The content linter enforces style, structure, and quality rules across all Markdown files. Run it on your changed files before committing:
+
+    ```bash
+    npm run lint-content -- --paths content/github-cli/github-cli/about-github-cli.md
+    ```
+
+    To lint all changed files at once:
+
+    ```bash
+    npm run lint-content
+    ```
+
+    Linting errors will block your pull request's required checks. Fix them locally to save time.
+
+    <Tip>
+      The linter can auto-fix some issues. Run with `--fix` to apply safe automatic corrections:
+
+      ```bash
+      npm run lint-content -- --fix --paths content/path/to/file.md
+      ```
+    </Tip>
+  </Step>
+
+  <Step title="Commit your changes">
+    Stage and commit your edits:
+
+    ```bash
+    git add content/github-cli/github-cli/about-github-cli.md
+    git commit -m "docs: clarify GitHub CLI authentication steps"
+    ```
+  </Step>
+</Steps>
+
+## Open a pull request
+
+Push your branch to your fork and open a pull request against `github/docs`:
+
+```bash
+git push origin my-content-fix
+```
+
+Then go to your fork on GitHub and click **Compare & pull request**. The PR template will guide you through describing your change.
+
+<Columns cols={2}>
+  <Card title="Contribution guidelines" icon="code-pull-request" href="/contributing/pull-requests">
+    Learn about the review process, what reviewers look for, and how long merges take.
+  </Card>
+  <Card title="Translations" icon="globe" href="/contributing/translations">
+    Understand how merged content is translated into supported languages automatically.
+  </Card>
+</Columns>
+
+## Enabling additional languages locally
+
+By default, the local server only runs with English enabled. To run with additional languages, set `ENABLED_LANGUAGES` inline when starting the server:
+
+```bash
+ENABLED_LANGUAGES=en,ja,pt npm start
+```
+
+Or set it in your `.env` file to avoid typing it every time. Restart the server after any change to `ENABLED_LANGUAGES`. Supported language codes are defined in [`src/languages/lib/languages.ts`](https://github.com/github/docs/blob/main/src/languages/lib/languages.ts).
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Site architecture" icon="sitemap" href="/site-architecture">
+    Understand how the full repository is organized across content, data, and source directories.
+  </Card>
+  <Card title="Frontmatter reference" icon="file-code" href="/content/frontmatter">
+    Learn all available frontmatter fields, including versions, redirects, and layout options.
+  </Card>
+  <Card title="Versioning" icon="code-branch" href="/content/versioning">
+    Version content across GitHub.com, GitHub Enterprise Server, and GitHub Enterprise Cloud.
+  </Card>
+  <Card title="Liquid helpers" icon="brackets-curly" href="/content/liquid-helpers">
+    Use Liquid tags for conditional content, reusables, variables, and tool switching.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

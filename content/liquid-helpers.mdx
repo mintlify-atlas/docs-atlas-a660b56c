@@ -1,0 +1,306 @@
+---
+title: Liquid helpers in GitHub Docs
+description: Reference for all custom Liquid tags available in GitHub Docs content files, including data, versioning, octicons, tool switchers, and platform switchers.
+---
+
+GitHub Docs extends the standard [Liquid](https://shopify.github.io/liquid/) templating language with a set of custom tags. These tags are processed server-side before Markdown rendering and power versioning, reusable content, icon rendering, and UI interactions like tool and platform switchers.
+
+## `{% data %}` — variables and reusables
+
+The `{% data %}` tag inserts content from files in the `data/` directory. It is the primary mechanism for both variable substitution and reusable content inclusion.
+
+```liquid
+{% data variables.product.prodname_actions %}
+{% data reusables.repositories.navigate-to-repo %}
+```
+
+See [Reusables and variables](/content/reusables-and-variables) for the full reference.
+
+## `{% ifversion %}` — version conditionals
+
+The `{% ifversion %}` tag conditionally renders content based on the product version the reader is currently viewing. It supports `{% elsif %}`, `{% else %}`, and must be closed with `{% endif %}`.
+
+### Syntax
+
+```liquid
+{% ifversion VERSION_EXPRESSION %}
+Content for matching versions.
+{% elsif OTHER_EXPRESSION %}
+Content for these versions instead.
+{% else %}
+Content for all other versions.
+{% endif %}
+```
+
+### Version identifiers
+
+| Identifier | Product |
+|---|---|
+| `fpt` | GitHub.com (free, pro, team) |
+| `ghes` | GitHub Enterprise Server |
+| `ghec` | GitHub Enterprise Cloud |
+
+### Combining conditions
+
+```liquid
+{% ifversion fpt or ghec %}
+This appears on GitHub.com and GitHub Enterprise Cloud.
+{% endif %}
+```
+
+```liquid
+{% ifversion ghes >= 3.6 %}
+This appears on GitHub Enterprise Server 3.6 and later.
+{% endif %}
+```
+
+```liquid
+{% ifversion ghes < 3.10 %}
+This appears on older GitHub Enterprise Server releases.
+{% endif %}
+```
+
+### Real-world example
+
+From `content/account-and-profile/concepts/account-management.md`:
+
+```liquid
+{% ifversion ghes < 3.21 %}
+## About converting your personal account
+
+Converting a personal account into an organization allows you to move to a
+shared account where a large number of people can collaborate.
+
+{% else %}
+
+## About moving your work to an organization
+
+You can move repositories and projects from your personal account to an
+organization while keeping your personal account intact.
+
+{% endif %}
+```
+
+## `{% octicon %}` — inline icons
+
+The `{% octicon %}` tag renders an [Octicon](https://primer.style/foundations/icons/) inline within the text. This is used to reference the same icons that appear in the GitHub UI, so documentation can match what readers see on screen.
+
+### Syntax
+
+```liquid
+{% octicon "ICON-NAME" aria-label="ACCESSIBLE LABEL" %}
+{% octicon "ICON-NAME" aria-hidden="true" aria-label="LABEL" %}
+```
+
+### Examples
+
+```liquid
+Click {% octicon "mark-github" aria-label="The github octocat logo" %} in the upper-left corner.
+
+Select {% octicon "three-bars" aria-label="Open global navigation menu" %} at the top left of any page.
+
+Click {% octicon "kebab-horizontal" aria-label="Show workflow options" %} to open the dropdown.
+
+Use {% octicon "filter" aria-hidden="true" aria-label="filter" %} **Filter** to narrow results.
+```
+
+<Note>
+  Always provide either `aria-label` or both `aria-hidden="true"` and `aria-label`. Octicons used purely for decoration should use `aria-hidden="true"` so screen readers skip them.
+</Note>
+
+## Tool switcher tags
+
+Tool tags display content selectively based on which tool the reader has selected. The reader can switch between tools using tabs that appear above the first tool-tagged section on the page.
+
+### Available tool tags
+
+| Tag | Tool |
+|---|---|
+| `{% webui %}` / `{% endwebui %}` | GitHub.com web interface |
+| `{% cli %}` / `{% endcli %}` | GitHub CLI (`gh`) |
+| `{% desktop %}` / `{% enddesktop %}` | GitHub Desktop |
+| `{% curl %}` / `{% endcurl %}` | cURL (REST API calls) |
+| `{% codespaces %}` / `{% endcodespaces %}` | GitHub Codespaces |
+| `{% vscode %}` / `{% endvscode %}` | Visual Studio Code |
+| `{% graphql %}` / `{% endgraphql %}` | GraphQL API |
+| `{% powershell %}` / `{% endpowershell %}` | PowerShell |
+| `{% bash %}` / `{% endbash %}` | Bash |
+| `{% javascript %}` / `{% endjavascript %}` | JavaScript |
+
+### Example
+
+From `content/actions/how-tos/manage-workflow-runs/disable-and-enable-workflows.md`:
+
+```liquid
+## Disabling a workflow
+
+{% webui %}
+
+{% data reusables.repositories.navigate-to-repo %}
+{% data reusables.repositories.actions-tab %}
+1. In the left sidebar, click the workflow you want to disable.
+1. Click {% octicon "kebab-horizontal" aria-label="Show workflow options" %} and click **Disable workflow**.
+
+{% endwebui %}
+
+{% cli %}
+
+To disable a workflow, use the `workflow disable` subcommand.
+
+    gh workflow disable WORKFLOW
+
+{% endcli %}
+```
+
+### Setting the default tool
+
+By default the web UI tab is selected. To change the initial tool selection for a page, set `defaultTool` in the frontmatter:
+
+```yaml
+defaultTool: cli
+```
+
+The reader's last explicit selection takes precedence over `defaultTool` for the rest of their session.
+
+## Platform switcher tags
+
+Platform tags display content selectively based on the reader's operating system. GitHub Docs detects the reader's OS and selects the matching platform tab automatically.
+
+### Available platform tags
+
+| Tag | Platform |
+|---|---|
+| `{% mac %}` / `{% endmac %}` | macOS |
+| `{% windows %}` / `{% endwindows %}` | Windows |
+| `{% linux %}` / `{% endlinux %}` | Linux |
+
+### Example
+
+From `content/actions/how-tos/manage-runners/larger-runners/use-larger-runners.md`:
+
+```liquid
+{% linux %}
+
+{% data reusables.actions.run-jobs-larger-runners %}
+
+{% endlinux %}
+
+{% windows %}
+
+{% data reusables.actions.run-jobs-larger-runners %}
+
+{% endwindows %}
+
+{% mac %}
+
+To run jobs on macOS larger runners, update the `runs-on` key in your
+workflow YAML to use one of the GitHub-defined labels for macOS runners.
+
+{% endmac %}
+```
+
+### Setting the default platform
+
+If the reader's OS is not the right default for a given page (for example, a page about GitHub Actions runners where Linux is almost always the relevant platform), override it with `defaultPlatform`:
+
+```yaml
+defaultPlatform: linux
+```
+
+## Callout tags
+
+Callouts render styled alert boxes in the published page. The GitHub Docs source uses Liquid-style callout tags; these map to styled blockquotes in the rendered output.
+
+<Note>
+  Modern GitHub Docs articles use the GFM alert syntax (`> [!NOTE]`, `> [!WARNING]`, `> [!TIP]`) as an alternative to Liquid callout tags. Both syntaxes are supported.
+</Note>
+
+### Note
+
+```liquid
+{% note %}
+
+**Note:** Scheduled workflows only run on the default branch.
+
+{% endnote %}
+```
+
+Equivalent GFM syntax:
+
+```markdown
+> [!NOTE]
+> Scheduled workflows only run on the default branch.
+```
+
+### Warning
+
+```liquid
+{% warning %}
+
+**Warning:** Deleting a repository is permanent and cannot be undone.
+
+{% endwarning %}
+```
+
+Equivalent GFM syntax:
+
+```markdown
+> [!WARNING]
+> Deleting a repository is permanent and cannot be undone.
+```
+
+### Tip
+
+```liquid
+{% tip %}
+
+**Tip:** You can use `gh repo clone` to clone a repository using the GitHub CLI.
+
+{% endtip %}
+```
+
+## Whitespace control
+
+Liquid tags introduce newlines into the rendered output. Inside Markdown lists and tables, extra blank lines break the list or table structure. Use a hyphen immediately inside the tag delimiters to strip the adjacent whitespace.
+
+| Syntax | Effect |
+|---|---|
+| `{%- tag %}` | Strip whitespace **before** the tag. |
+| `{% tag -%}` | Strip whitespace **after** the tag. |
+| `{%- tag -%}` | Strip whitespace on **both sides**. |
+
+### Example: versioning a list item
+
+```liquid
+1. Clone the repository.
+{%- ifversion ghes %}
+1. Configure your enterprise hostname.
+{%- endif %}
+1. Open a pull request.
+```
+
+Without `{%-`, a blank line appears before "Configure your enterprise hostname," which breaks the ordered list numbering.
+
+### Example: versioning a table row
+
+```markdown
+| Feature | Status |
+|---|---|
+| Code scanning | Available |
+{%- ifversion ghes >= 3.5 %}
+| Secret scanning | Available |
+{%- endif %}
+| Dependabot alerts | Available |
+```
+
+## `indented_data_reference`
+
+When a reusable needs to appear inside an ordered list, use `indented_data_reference` instead of `{% data %}` so the list indentation is preserved:
+
+```markdown
+1. Navigate to your repository.
+{% indented_data_reference reusables.repositories.actions-tab spaces=3 %}
+1. Select the workflow.
+```
+
+The `spaces` argument specifies how many spaces to prepend to each line of the reusable content.

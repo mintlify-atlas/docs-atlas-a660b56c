@@ -1,0 +1,373 @@
+---
+title: Frontmatter reference
+description: Complete reference for every YAML frontmatter field recognized by the GitHub Docs site, with types, defaults, and examples.
+---
+
+[YAML frontmatter](https://jekyllrb.com/docs/front-matter/) is a block of key-value metadata at the top of every Markdown file, delimited by `---`. The GitHub Docs site reads frontmatter to control rendering, navigation, versioning, and search behavior.
+
+The full schema is validated by the test suite. See [`src/frame/lib/frontmatter.ts`](https://github.com/github/docs/blob/main/src/frame/lib/frontmatter.ts) for the authoritative source.
+
+```yaml
+---
+title: About GitHub CLI
+shortTitle: GitHub CLI
+intro: GitHub CLI is an open source tool for using GitHub from your computer's command line.
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+contentType: concepts
+---
+```
+
+<Note>
+  `title` and `versions` are the only **required** fields. All other fields are optional unless otherwise noted.
+</Note>
+
+---
+
+## Core fields
+
+<ParamField path="title" type="string" required>
+  Sets the human-readable title rendered as the `<h1>` at the top of the page and in the browser `<title>` tag. Supports Liquid variables.
+
+  ```yaml
+  title: 'About {% data variables.product.prodname_emus %}'
+  ```
+</ParamField>
+
+<ParamField path="shortTitle" type="string">
+  An abbreviated title used in breadcrumbs and sidebar navigation. Falls back to `title` if omitted.
+
+  Maximum lengths by article type:
+
+  | Article type | Max characters |
+  |---|---|
+  | Articles | 31 |
+  | Categories | 27 |
+  | Map topics | 30 |
+
+  ```yaml
+  title: Contributing to projects with GitHub Desktop
+  shortTitle: Contributing to projects
+  ```
+</ParamField>
+
+<ParamField path="intro" type="string">
+  A short description of the page rendered directly after the `title`. Appears in search results and on parent index pages as the article summary.
+
+  ```yaml
+  intro: Learn how to use GitHub CLI to interact with GitHub from your terminal.
+  ```
+</ParamField>
+
+<ParamField path="permissions" type="string">
+  A statement describing the access level required to perform the tasks in this article. Rendered after the `intro`.
+
+  ```yaml
+  permissions: Organization owners can configure two-factor authentication requirements.
+  ```
+</ParamField>
+
+<ParamField path="product" type="string">
+  A product callout rendered after the `intro` and `permissions` statement. Use this to flag that a feature requires a specific GitHub plan.
+
+  ```yaml
+  product: 'GitHub Codespaces is available for organizations using {% data variables.product.prodname_ghe_cloud %}.'
+  ```
+</ParamField>
+
+---
+
+## Versioning
+
+<ParamField path="versions" type="object" required>
+  Declares which versions of GitHub this page applies to. Keys map to product plans; values are [SemVer ranges](https://semver.org/) or `'*'` (all releases).
+
+  Recognized keys:
+
+  | Key | Product |
+  |---|---|
+  | `fpt` | GitHub.com (Free, Pro, Team) |
+  | `ghes` | GitHub Enterprise Server |
+  | `ghec` | GitHub Enterprise Cloud |
+
+  **All versions:**
+  ```yaml
+  versions:
+    fpt: '*'
+    ghes: '*'
+    ghec: '*'
+  ```
+
+  **Enterprise Server only, all releases:**
+  ```yaml
+  versions:
+    ghes: '*'
+  ```
+
+  **GitHub.com and GHES 2.20 or later:**
+  ```yaml
+  versions:
+    fpt: '*'
+    ghes: '>=2.20'
+  ```
+
+  **GHES 2.22 and 3.0 only:**
+  ```yaml
+  versions:
+    fpt: '*'
+    ghes: '>=2.22 <3.1'
+  ```
+</ParamField>
+
+<ParamField path="redirect_from" type="string[]">
+  A list of old URLs that should redirect to this page. Add entries when you rename, move, or consolidate articles so existing links remain valid.
+
+  ```yaml
+  redirect_from:
+    - /articles/first-launch/
+    - /articles/error-github-enterprise-version-is-too-old/
+    - /articles/getting-started-with-github-for-windows/
+  ```
+</ParamField>
+
+---
+
+## Layout and navigation
+
+<ParamField path="layout" type="string">
+  Selects the page layout component. If omitted, the default article layout is used.
+
+  | Value | Use |
+  |---|---|
+  | `product-landing` | Top-level product pages |
+  | `product-guides` | Filterable guides index pages |
+  | `category-landing` | Category overview pages |
+  | `journey-landing` | Sequential learning path pages |
+  | `release-notes` | Release notes pages |
+  | `graphql-explorer` | Interactive GraphQL explorer |
+  | `inline` | Minimal layout, no sidebar |
+  | `false` | No layout wrapper |
+</ParamField>
+
+<ParamField path="children" type="string[]">
+  Lists the relative paths of all pages directly nested under this index page. Required on every `index.md` file.
+
+  ```yaml
+  children:
+    - /quickstart
+    - /learn-github-actions
+    - /using-workflows
+    - /sharing-automations
+  ```
+
+  <Warning>
+    If a page is not listed in `children`, its URL returns 404 — even if the file exists on disk.
+  </Warning>
+</ParamField>
+
+<ParamField path="childGroups" type="array">
+  Groups children into named sections on the homepage. Only valid in `content/index.md`. Each entry has a `name`, an optional `icon`, and a `children` array whose values must also appear in the top-level `children` field.
+
+  ```yaml
+  childGroups:
+    - name: Get started
+      icon: rocket
+      children:
+        - /get-started
+    - name: CI/CD and DevOps
+      icon: gear
+      children:
+        - /actions
+        - /codespaces
+  ```
+</ParamField>
+
+<ParamField path="featuredLinks" type="object">
+  Renders highlighted article links on product landing pages and the homepage. Supported sub-keys:
+
+  | Sub-key | Type | Description |
+  |---|---|---|
+  | `gettingStarted` | `string[]` | Links in the "Get started" column |
+  | `startHere` | `string[]` | Links in the "Start here" column |
+  | `guideCards` | `string[]` | Links shown as guide cards |
+  | `popular` | `string[]` | Links under the "Popular" heading |
+  | `popularHeading` | `string` | Custom heading to replace "Popular" |
+  | `videos` | `{ title, href }[]` | Video links with custom heading via `videosHeading` |
+
+  ```yaml
+  featuredLinks:
+    gettingStarted:
+      - /actions/quickstart
+    startHere:
+      - /actions/learn-github-actions/understanding-github-actions
+    popular:
+      - /actions/using-workflows/workflow-syntax-for-github-actions
+      - /actions/using-workflows/events-that-trigger-workflows
+    popularHeading: Most-used reference pages
+  ```
+</ParamField>
+
+---
+
+## Table of contents
+
+<ParamField path="showMiniToc" type="boolean" default="true">
+  Controls whether the auto-generated "In this article" mini TOC appears above the article body. Defaults to `true` on articles and `false` on map topics and `index.md` pages.
+
+  Set to `false` to suppress the mini TOC on a specific article:
+
+  ```yaml
+  showMiniToc: false
+  ```
+
+  <Note>
+    Do not add a hardcoded "In this article" section manually — the page will show duplicate TOCs.
+  </Note>
+</ParamField>
+
+---
+
+## Content classification
+
+<ParamField path="contentType" type="string">
+  Declares the article type. Used to filter articles on product guides pages when `layout: product-guides` is set.
+
+  Allowed values: `get-started`, `concepts`, `how-tos`, `reference`, `tutorials`, `rai`, `landing`, `homepage`, `other`.
+
+  ```yaml
+  contentType: how-tos
+  ```
+</ParamField>
+
+---
+
+## Platform and tool defaults
+
+<ParamField path="defaultPlatform" type="string">
+  Overrides the initial platform tab selection. Without this field, the platform that matches the reader's operating system is shown. Use `linux` for articles about GitHub Actions runners, which are OS-independent from the reader's perspective.
+
+  Allowed values: `mac`, `windows`, `linux`.
+
+  ```yaml
+  defaultPlatform: linux
+  ```
+</ParamField>
+
+<ParamField path="defaultTool" type="string">
+  Overrides the initial tool tab selection. Without this field, the GitHub web UI (`webui`) is selected. User preferences override this default once a reader clicks a tool tab.
+
+  Allowed values: `webui`, `cli`, `desktop`, `curl`, `codespaces`, `vscode`, `importer_cli`, `graphql`, `powershell`, `bash`, `javascript`.
+
+  ```yaml
+  defaultTool: cli
+  ```
+</ParamField>
+
+---
+
+## Product guides and learning tracks
+
+<ParamField path="learningTracks" type="string[]">
+  Renders a list of learning tracks on a product's sub-landing page. References learning track names defined in `data/learning-tracks/*.yml`. Only applicable with `layout: product-guides`.
+
+  ```yaml
+  learningTracks:
+    - actions
+  ```
+</ParamField>
+
+<ParamField path="includeGuides" type="string[]">
+  An explicit list of article paths to include in a product guides page. Each article must have a `contentType` for the filter UI to work. Only applicable with `layout: product-guides`.
+
+  ```yaml
+  includeGuides:
+    - /actions/guides/about-continuous-integration
+    - /actions/guides/setting-up-continuous-integration-using-workflow-templates
+    - /actions/guides/building-and-testing-nodejs
+    - /actions/guides/building-and-testing-powershell
+  ```
+</ParamField>
+
+<ParamField path="journeyTracks" type="array">
+  Defines journey tracks for `layout: journey-landing` pages. Each track has an `id`, a `title`, an optional `description`, and a `guides` array. Each guide entry requires an `href` and accepts an optional `alternativeNextStep`.
+
+  ```yaml
+  journeyTracks:
+    - id: getting_started
+      title: 'Getting started with {% data variables.product.prodname_actions %}'
+      description: 'Learn the basics of GitHub Actions.'
+      guides:
+        - href: /actions/quickstart
+        - href: /actions/learn-github-actions
+          alternativeNextStep: 'Want to skip ahead? See [AUTOTITLE](/actions/using-workflows).'
+        - href: /actions/using-workflows
+    - id: advanced
+      title: 'Advanced {% data variables.product.prodname_actions %}'
+      guides:
+        - href: /actions/using-workflows/workflow-syntax-for-github-actions
+        - href: /actions/deployment/deploying-with-github-actions
+  ```
+</ParamField>
+
+---
+
+## Changelog integration
+
+<ParamField path="changelog" type="object">
+  Renders a "What's new" feed on product landing pages by pulling recent entries from [GitHub Changelog](https://github.blog/changelog/). Education pages pull from `https://github.blog/category/community/education` instead.
+
+  | Sub-key | Required | Description |
+  |---|---|---|
+  | `label` | Yes | Matches labels used in the GitHub Changelog |
+  | `prefix` | No | String prefix to strip from each changelog title in the feed |
+
+  ```yaml
+  changelog:
+    label: actions
+    prefix: 'GitHub Actions: '
+  ```
+
+  With `prefix: 'GitHub Actions: '`, a changelog entry titled "GitHub Actions: Reusable workflows are now GA" renders as "Reusable workflows are now GA" in the docs feed.
+</ParamField>
+
+---
+
+## Miscellaneous
+
+<ParamField path="allowTitleToDifferFromFilename" type="boolean" default="false">
+  When `true`, suppresses the linter check that flags mismatches between a page's `title` frontmatter and its filename. Use this when the title contains Liquid variables or punctuation that cannot appear in a filename.
+
+  For example, a page with `title: 'About {% data variables.product.prodname_emus %}'` must be named `about-enterprise-managed-users.md`. Set `allowTitleToDifferFromFilename: true` to prevent test failures.
+
+  ```yaml
+  allowTitleToDifferFromFilename: true
+  ```
+</ParamField>
+
+<ParamField path="communityRedirect" type="object">
+  Overrides the "Ask the GitHub community" link in the page footer with a custom name and URL. Properties: `name` (string) and `href` (string).
+
+  ```yaml
+  communityRedirect:
+    name: GitHub Education Community
+    href: https://github.com/orgs/community/discussions/categories/github-education
+  ```
+</ParamField>
+
+---
+
+## Escaping single quotes
+
+YAML uses single quotes to wrap frontmatter strings. To include a literal single quote inside a single-quoted string, double it:
+
+```yaml
+title: 'GitHub''s Billing Plans'
+```
+
+Alternatively, switch the outer delimiter to double quotes:
+
+```yaml
+title: "GitHub's Billing Plans"
+```

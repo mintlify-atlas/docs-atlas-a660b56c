@@ -1,0 +1,167 @@
+---
+title: "Pull requests"
+description: "How to fork the repository, make content changes, run the linter, and submit a pull request for review."
+---
+
+Content contributions to GitHub Docs are made through pull requests against the `github/docs` repository. This page covers the full workflow, from forking the repository to getting your pull request merged.
+
+## Before you start
+
+Review [Types of contributions](/contributing/types-of-contributions) to confirm that the change you want to make is in scope. Pull requests for out-of-scope changes (such as infrastructure or workflow files) will be closed.
+
+## Fork and clone the repository
+
+<Steps>
+  <Step title="Fork the repository">
+    Go to [github/docs](https://github.com/github/docs) and click **Fork**. This creates a copy of the repository under your GitHub account.
+  </Step>
+  <Step title="Clone your fork">
+    Clone your fork to your local machine:
+
+    ```bash
+    git clone https://github.com/YOUR-USERNAME/docs.git
+    cd docs
+    ```
+  </Step>
+  <Step title="Install dependencies">
+    Install Node.js v24 (the version specified in `package.json` under `"engines"`), then do a clean install of dependencies:
+
+    ```bash
+    npm ci
+    ```
+
+    See the [local development setup](/development/setup) page for full environment requirements.
+  </Step>
+  <Step title="Create a branch">
+    Create a new branch from `main` for your changes. Use a short, descriptive name:
+
+    ```bash
+    git checkout -b fix/clarify-actions-permissions
+    ```
+
+    Prefix suggestions:
+    - `fix/` — corrections to existing content
+    - `add/` — new content
+    - `update/` — updates to existing content
+  </Step>
+</Steps>
+
+## Making content changes
+
+Only modify files in the following locations. Changes to anything else will not be accepted.
+
+| Path | What it contains |
+|------|-----------------|
+| `/content/**/*.md` | All documentation pages |
+| `/data/reusables/**` | Reusable content snippets |
+| `/data/variables/**` | Variables (except `product.yml`) |
+| `/data/release-notes/**` | Release note entries |
+| `/data/glossaries/external.yml` | External glossary terms |
+| `/data/product-examples/**` | Product example data |
+
+<Warning>
+  Do not modify files outside these paths — including GitHub Actions workflows, scripts, application source code, or configuration files. Those changes will not be reviewed or merged.
+</Warning>
+
+### Writing style
+
+Follow these principles from the GitHub Docs [style guide](https://docs.github.com/en/contributing/style-guide-and-content-model/style-guide):
+
+- **Second person**: Use "you" to address the reader directly.
+- **Active voice**: Choose active constructions over passive ones.
+- **Sentence case for headings**: Capitalize only the first word and proper nouns.
+- **Inclusive language**: Avoid gendered language, ableist terms, and idioms.
+- **Precise terminology**: Spell out abbreviations on first use. Avoid informal shorthand like "repo" or "PR."
+
+## Run the linter before submitting
+
+Run the content linter to catch errors before submitting your pull request:
+
+```bash
+npm run lint-content
+```
+
+The linter checks for broken internal links, incorrect frontmatter, Liquid syntax errors, and style rule violations. Fix all reported errors before opening your pull request.
+
+<Tip>
+  You can also run the linter against only the files you changed to speed things up:
+
+  ```bash
+  npm run lint-content -- --paths content/path/to/your-file.md
+  ```
+</Tip>
+
+## Self-review checklist
+
+Before marking your pull request as ready for review, check the following:
+
+<AccordionGroup>
+  <Accordion title="Content accuracy">
+    - [ ] All information is technically accurate.
+    - [ ] Code examples are correct and tested.
+    - [ ] Links point to existing, relevant pages.
+    - [ ] Procedures follow the actual product UI.
+  </Accordion>
+  <Accordion title="Writing quality">
+    - [ ] Headings use sentence case.
+    - [ ] Instructions use second person ("you") and active voice.
+    - [ ] No broken or placeholder text remains.
+    - [ ] The change makes sense without additional context.
+  </Accordion>
+  <Accordion title="Linting and formatting">
+    - [ ] `npm run lint-content` passes with no errors.
+    - [ ] Frontmatter fields (`title`, `shortTitle`, `intro`) are present and accurate.
+    - [ ] Liquid tags are correctly opened and closed.
+  </Accordion>
+</AccordionGroup>
+
+The full self-review checklist is available in the [GitHub Docs contributing guide](https://docs.github.com/en/contributing/collaborating-on-github-docs/self-review-checklist).
+
+## Opening the pull request
+
+<Steps>
+  <Step title="Push your branch">
+    ```bash
+    git push origin fix/clarify-actions-permissions
+    ```
+  </Step>
+  <Step title="Open the pull request">
+    Go to [github/docs](https://github.com/github/docs) and click **Compare & pull request**. Fill in the pull request template:
+
+    - **Title**: A short description of what the PR changes.
+    - **Description**: Explain *why* the change is needed, not just what changed. Link to the relevant issue if one exists.
+    - **Type of change**: Select the appropriate option in the template.
+  </Step>
+  <Step title="Link to an issue">
+    If your pull request resolves an open issue, add a closing keyword in the description:
+
+    ```
+    Closes #1234
+    ```
+
+    This automatically closes the issue when the PR is merged.
+  </Step>
+  <Step title="Allow maintainer edits">
+    Enable **Allow edits from maintainers** on your pull request. This lets the docs team make minor corrections directly on your branch without needing to ask you.
+  </Step>
+</Steps>
+
+## The review process
+
+After you open a pull request, a docs team member will review it. The team is small, so review times vary depending on current workload.
+
+During review, you may receive:
+
+- **Requests for changes** — Make the requested updates on your branch and push them. The pull request will update automatically.
+- **Approvals** — Once approved, the pull request is eligible to enter the merge queue.
+- **Closing without merge** — If the change is out of scope or duplicates existing content, the team will close the PR and explain why.
+
+<Note>
+  The docs team may make small edits directly to your branch (such as fixing linter errors or adjusting formatting) rather than requesting changes. You'll see these as additional commits on your branch.
+</Note>
+
+## Merge queue
+
+GitHub Docs uses a [merge queue](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request-with-a-merge-queue) on the `main` branch. When your pull request is approved and added to the queue, it is merged automatically once all required checks pass.
+
+After your pull request merges, your changes are automatically deployed to [docs.github.com](https://docs.github.com). Deployment can take up to 24 hours. Your source branch is automatically deleted after the pull request closes.

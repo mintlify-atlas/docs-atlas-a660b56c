@@ -1,0 +1,282 @@
+---
+title: Style guide
+description: Writing conventions for GitHub Docs—voice, tone, formatting, terminology, and article structure.
+---
+
+GitHub Docs follows a consistent style so readers can trust that information is clear, accurate, and presented the same way across all articles. This guide covers the rules you need to write content that fits GitHub Docs.
+
+<Note>
+  These guidelines are specific to GitHub Docs. For general style questions not covered here, consult the [Microsoft Style Guide](https://docs.microsoft.com/style-guide/welcome/). For GitHub brand questions, see the [GitHub Brand Guide](https://brand.github.com).
+</Note>
+
+## Voice and tone
+
+Write for your audience. GitHub Docs readers range from beginners to experienced engineers, so use clear language without assuming expertise.
+
+- **Second person.** Address the reader as "you." Never use "we" to refer to the reader.
+- **Active voice.** Passive voice is acceptable when you need to emphasize the object of an action, but prefer active constructions.
+- **Authentic and direct.** Be confident and empathetic. Avoid filler phrases and marketing language.
+- **Global audience.** Avoid idioms, slang, and region-specific turns of phrase.
+
+| Use | Avoid |
+|-----|-------|
+| You can configure this setting in your repository. | We can configure this setting in your repository. |
+| GitHub Actions runs the workflow. | The workflow is run by GitHub Actions. |
+| Click **Save**. | Please click the Save button. |
+
+## Sentence structure
+
+Keep sentences short and focused. One idea per sentence makes content easier to read and translate.
+
+- Lead with the most important information.
+- Use parallel structure in lists and headings.
+- Spell out words rather than abbreviating them, except when the abbreviation appears in the product UI.
+
+| Use | Avoid |
+|-----|-------|
+| Repository | Repo |
+| Administrator | Admin |
+
+## Headings
+
+Use sentence case for all headings—capitalize only the first word and proper nouns.
+
+```markdown
+## Setting up your repository        ✓
+## Setting Up Your Repository        ✗
+```
+
+- Start articles with an H2 (`##`). Do not use H1—the page title renders as H1 automatically.
+- Do not skip heading levels. An H4 must follow an H3, not an H2.
+- Include text between every heading and its first subheading.
+- Each heading at the same level on a page must be unique.
+
+```markdown
+## Heading (H2)
+
+Introductory text.
+
+### Subheading (H3)
+
+Text.
+
+#### Subheading (H4)
+
+Text.
+```
+
+## Formatting UI elements
+
+<AccordionGroup>
+  <Accordion title="Bold for interactive UI elements">
+    Use bold for UI elements that can be clicked, selected, or otherwise interacted with. Omit the word "button" or "checkbox" from the description.
+
+    - Click **Settings**.
+    - Select **Enable for all new repositories**.
+    - Select the **Backup email addresses** dropdown menu and click **Only allow primary email**.
+
+    Use quotation marks for non-interactive UI text.
+
+    - Under "IP allow list", click **Edit**.
+  </Accordion>
+  <Accordion title="Code formatting for commands, filenames, and paths">
+    Use backticks to render inline code for:
+
+    - File names and directory names: `README.md`, `.github/workflows/`
+    - Commands: `git lfs install`
+    - Code references: `ghe-cluster-status`
+    - Branch names: `main`, `USERNAME.github.io`
+
+    Do not use italics or bold for filenames.
+
+    | Use | Avoid |
+    |-----|-------|
+    | In your `README.md` file… | In your _README.md_ file… |
+    | In your `.github/workflows/` directory… | In your **.github/workflows/** directory… |
+  </Accordion>
+  <Accordion title="Keyboard shortcuts">
+    Use the HTML `<kbd>` tag for each individual key. Describe Mac shortcuts before Windows/Linux.
+
+    ```html
+    <kbd>Command</kbd>+<kbd>B</kbd> (Mac) or <kbd>Ctrl</kbd>+<kbd>B</kbd> (Windows/Linux)
+    ```
+
+    Use full words for Apple modifier keys (`Command`, `Option`, `Control`), not symbols (`⌘`, `⌥`, `⌃`).
+  </Accordion>
+</AccordionGroup>
+
+## Code blocks
+
+Keep code lines to about 60 characters to avoid horizontal scrolling. Place explanatory text before the code block rather than inside it as comments.
+
+Always specify the language after the opening fence: ` ```shell `, ` ```yaml `, ` ```javascript `.
+
+Rules for code blocks:
+
+- Always specify the language after the opening fence (` ```shell `, ` ```yaml `, ` ```javascript `).
+- Write placeholder values in ALL CAPS with dashes: `git checkout -b BRANCH-NAME`, not `git checkout -b <branch-name>`.
+- Do not include a `$` prompt before commands.
+- Comment out command output so readers can copy and paste commands without modification.
+
+<CodeGroup>
+
+```shell correct.sh
+git lfs install
+# Git LFS initialized.
+```
+
+```shell avoid.sh
+$ git lfs install
+> Git LFS initialized.
+```
+
+</CodeGroup>
+
+## Capitalization
+
+- Use sentence case for headings, titles, and short titles.
+- Product names follow their official casing (see [Product names](#product-names)).
+- Do not capitalize commonly used features like "pull requests," "issues," or "topics."
+- Feature names are always lowercase; product names are always singular.
+
+| Product | Feature |
+|---------|---------|
+| GitHub Actions | an action |
+| GitHub Codespaces | a codespace |
+| GitHub Packages | a package |
+| GitHub Pages | a GitHub Pages site |
+
+## Article types
+
+GitHub Docs uses distinct article types. Each type has a specific purpose and structure.
+
+<CardGroup cols={2}>
+  <Card title="Conceptual" icon="book-open">
+    Explains what something is and why it matters. Does not include step-by-step instructions. Use when readers need to understand a concept before acting.
+  </Card>
+  <Card title="Procedural" icon="list-ordered">
+    Gives numbered steps to complete a specific task. Every step includes an action. Prerequisites appear before the steps, not within them.
+  </Card>
+  <Card title="Referential" icon="table">
+    Documents options, settings, parameters, or event lists. Often uses tables. Readers scan rather than read linearly.
+  </Card>
+  <Card title="Quickstart" icon="bolt">
+    Gets a reader to a working outcome in under 10 minutes. Assumes minimal background. Links to longer procedural articles for depth.
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap">
+    A longer, learning-oriented walk-through. Includes context and explanation alongside steps. Readers complete a meaningful project by the end.
+  </Card>
+  <Card title="Troubleshooting" icon="wrench">
+    Addresses specific errors or unexpected behaviors. Each problem and its solution are paired together. Symptoms precede causes and fixes.
+  </Card>
+</CardGroup>
+
+## Product names
+
+Always use full, official product names. Never abbreviate or shorten them unless reproducing exact UI text. Product names are never possessive.
+
+Use Liquid variables for product names—do not write them in plain text. This allows name changes to propagate across the site automatically.
+
+```markdown
+{% data variables.product.prodname_actions %}        → GitHub Actions
+{% data variables.product.prodname_dotcom %}         → GitHub
+{% data variables.product.prodname_ghe_server %}     → GitHub Enterprise Server
+{% data variables.product.prodname_ghe_cloud %}      → GitHub Enterprise Cloud
+{% data variables.product.company_short %}           → GitHub
+```
+
+When referring to GitHub Codespaces as a product, always include "GitHub." Individual remote environments created with the technology are called "codespaces" (lowercase).
+
+## Alerts
+
+Alerts highlight information that warrants breaking the flow of an article. Use them sparingly—no consecutive alerts, and no more than one per section. Keep alerts concise; if content requires multiple sentences or a list, use a section heading instead.
+
+<AccordionGroup>
+  <Accordion title="Note">
+    Provides additional context users may need but can act without. Use for caveats that affect certain users or products in preview.
+
+    ```markdown
+    > [!NOTE]
+    > Metadata for GitHub tokens is currently in public preview and subject to change.
+    ```
+  </Accordion>
+  <Accordion title="Tip">
+    Non-essential recommendations or best practices users can follow at their discretion. Particularly useful in articles for new users.
+
+    ```markdown
+    > [!TIP]
+    > When you @mention an organization, only those you're a member of will autocomplete.
+    ```
+  </Accordion>
+  <Accordion title="Important">
+    Key information users must know to achieve their goal.
+
+    ```markdown
+    > [!IMPORTANT]
+    > Runner Scale Sets do not support multiple labels.
+    ```
+  </Accordion>
+  <Accordion title="Warning">
+    Highlights potential risks before a user starts or continues a task. Particularly relevant for command-line or API processes.
+
+    ```markdown
+    > [!WARNING]
+    > After a certificate has been signed and issued, the certificate cannot be revoked.
+    ```
+  </Accordion>
+  <Accordion title="Caution">
+    Alerts users to dangerous or destructive actions, especially where there is a security risk or potential for data loss.
+
+    ```markdown
+    > [!CAUTION]
+    > This action permanently deletes the repository and cannot be undone.
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  Do not use Liquid syntax (`{% note %}`) for new alerts. Use the Markdown blockquote syntax shown above. Liquid alert syntax is still supported in legacy content but should not be added to new articles.
+</Warning>
+
+## Inclusive language
+
+GitHub Docs is read by a global developer community. Use words that are inclusive, anti-racist, and accessible.
+
+| Use | Avoid |
+|-----|-------|
+| Allowlist | Whitelist |
+| Denylist | Blacklist |
+| Default/main branch | Master branch |
+
+## Procedural steps
+
+Always use numbered lists for procedures. Present prerequisites and conceptual context before the numbered steps, not within individual steps.
+
+Each step must include an action. Within each step, use this order:
+
+1. Whether the step is optional
+2. Reason or result of the step (if needed for clarity)
+3. Location of the action
+4. Action
+
+**Pattern:** Optionally, to `REASON`, in `LOCATION`, take `ACTION`.
+
+**Examples:**
+
+- Click **Payment information**.
+- Under your organization name, click **Settings**.
+- To confirm your change, click **Remove credit card**.
+- Optionally, to see your plan's details, click **Show details**.
+
+## Placeholders
+
+Write placeholder text in ALL CAPS connected with dashes. Always explain what the placeholder represents.
+
+```markdown
+Run `git init YOUR-REPOSITORY`, replacing YOUR-REPOSITORY with the name of your repository.
+```
+
+| Use | Avoid |
+|-----|-------|
+| `git checkout -b BRANCH-NAME` | `git checkout -b <branch-name>` |
+| `git checkout -b BRANCH-NAME` | `git checkout -b your-branch-name` |

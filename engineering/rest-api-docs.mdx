@@ -1,0 +1,139 @@
+---
+title: 'REST API docs'
+description: 'How REST API documentation is generated, synced, and maintained from the OpenAPI source.'
+---
+
+The REST API documentation on docs.github.com/rest is **auto-generated** from the OpenAPI description stored in the open-source [`github/rest-api-description`](https://github.com/github/rest-api-description) repository. The pipeline reads that OpenAPI source and produces Markdown files, data files, and rendered React pages — without requiring manual content authoring for each endpoint.
+
+## How the pipeline works
+
+The entry point is the `.github/workflows/sync-openapi.yml` workflow, which runs on a daily schedule and can also be triggered manually. A single workflow run drives three pipelines simultaneously:
+
+- **REST** — generates `content/rest/` Markdown files and `src/rest/data/` JSON files
+- **Webhooks** — generates `src/webhooks/data/` JSON files
+- **GitHub Apps** — generates `src/github-apps/data/` JSON files
+
+When the workflow completes, it opens a pull request in `github/docs-internal` with the label `github-openapi-bot`. Reviewers know a PR with that label contains automated content changes and can review the diff without expecting hand-written copy.
+
+<Note>
+The SHA of the `github/rest-api-description` commit that produced the data is tracked in `src/rest/lib/config.json`. This gives you a precise audit trail for every generated file.
+</Note>
+
+## Directory structure
+
+```
+src/rest/
+├── components/     # React components that render REST pages
+├── data/           # Auto-generated JSON data files (do not edit manually)
+├── lib/
+│   └── config.json # Pipeline configuration (versions, frontmatter defaults, etc.)
+├── pages/          # Next.js page files for REST API routes
+├── scripts/
+│   └── update-files.ts  # Pipeline entrypoint
+└── tests/          # Vitest tests for the pipeline
+```
+
+The Markdown files that live in `content/rest/` are also auto-generated but are partially editable — see [Content team guidance](#content-team-guidance) below.
+
+## Configuring the pipeline
+
+`src/rest/lib/config.json` controls how the pipeline behaves. Key fields:
+
+| Field | Purpose |
+|---|---|
+| `api-versions` | Calendar-date API versions available per docs version |
+| `versionMapping` | Maps OpenAPI version names to docs short names |
+| `frontmatterDefaults` | Default frontmatter applied to every generated Markdown file |
+| `targetDirectory` | The `content/` subdirectory where Markdown files are written |
+| `indexOrder` | Controls child ordering in the `index.md` of `targetDirectory` |
+| `sha` | Auto-updated SHA of the `rest-api-description` commit used for the last sync |
+
+## Running the pipeline locally
+
+<Steps>
+  <Step title="Clone the OpenAPI description repo">
+    Clone [`github/rest-api-description`](https://github.com/github/rest-api-description) **inside** your local `docs-internal` checkout:
+
+    ```bash
+    git clone https://github.com/github/rest-api-description
+    ```
+  </Step>
+
+  <Step title="Set up authentication">
+    Add a classic GitHub token with `repo` scope to your `.env` file and enable SSO for the `github` org:
+
+    ```bash
+    GITHUB_TOKEN=ghp_your_token_here
+    ```
+  </Step>
+
+  <Step title="Run the sync script">
+    ```bash
+    npm run sync-rest -- -s rest-api-description models-gateway -o rest
+    ```
+
+    The `-o rest` flag is the default, so you can omit it. This writes updated files to `src/rest/data/` and `content/rest/`.
+  </Step>
+</Steps>
+
+## Triggering the workflow manually
+
+If you need to pick up OpenAPI changes before the next scheduled run, you can manually trigger the workflow:
+
+<Steps>
+  <Step title="Confirm the OpenAPI change is merged">
+    The OpenAPI change must be merged into the `main` branch of `github/rest-api-description` before you trigger the workflow.
+  </Step>
+
+  <Step title="Run the workflow">
+    Go to the [sync-openapi workflow](https://github.com/github/docs-internal/actions/workflows/sync-openapi.yml) and click **Run workflow**. Leave the source branch set to `main`.
+
+    A new pull request with the `github-openapi-bot` label will be opened in `github/docs-internal`.
+  </Step>
+</Steps>
+
+### Triggering against an unmerged branch
+
+If the OpenAPI change is still in a pull request on `github/rest-api-description`, run the workflow and supply the **branch name** from that PR. This lets you validate the docs impact before the OpenAPI change merges.
+
+## Content team guidance
+
+Writers can make limited edits to files in `content/rest/` without being overwritten:
+
+- **All frontmatter except `versions`** — You can change the title, intro, children order, and other frontmatter fields. The pipeline will **not** overwrite them on subsequent runs.
+- **`versions` frontmatter** — The pipeline overwrites this on every run. Do not edit it manually.
+- **Introduction paragraphs** — Add content **above** the auto-generation boundary comment:
+
+  ```markdown
+  <!-- Content after this section is automatically generated -->
+  ```
+
+  Anything below that comment will be replaced on the next sync.
+
+## Escalation paths
+
+<AccordionGroup>
+  <Accordion title="Pipeline failure">
+    1. Check the workflow logs in `.github/workflows/sync-openapi.yml`
+    2. Verify your token has access to `github/rest-api-description`
+    3. Look for OpenAPI schema validation errors in the output
+    4. Review the generated diff in `src/rest/data/` for unexpected changes
+    5. Check `config.json` for version mapping issues
+    6. If the problem is in the schema itself, escalate to `#api-platform` Slack
+  </Accordion>
+
+  <Accordion title="OpenAPI schema issues">
+    Schema problems originate in `github/rest-api-description`, owned by the API Platform team. Reach out in `#api-platform` Slack or open an issue there.
+  </Accordion>
+
+  <Accordion title="General questions">
+    Ask in the `#docs-engineering` Slack channel or open an issue in `github/docs-engineering`.
+  </Accordion>
+</AccordionGroup>
+
+## Known limitations
+
+- **Shared pipeline** — REST, Webhooks, and GitHub Apps cannot be synced independently. Running `npm run sync-rest` syncs all three.
+- **Version frontmatter overwrite** — The `versions` field in generated Markdown is always overwritten. Do not rely on manually set values.
+- **Introduction placement** — Writer-authored introductions must appear above the `<!-- Content after this section is automatically generated -->` comment.
+- **Calendar-date API versions** — When a new calendar-date version is added to the OpenAPI, `api-versions` in `config.json` must be updated manually before the next sync.

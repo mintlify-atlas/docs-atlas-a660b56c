@@ -1,0 +1,287 @@
+---
+title: Links and redirects
+description: How to format internal and external links in GitHub Docs, and how to configure redirects when content moves.
+---
+
+GitHub Docs uses specific link formats to ensure links stay accurate across versions and languages. This page covers how to write internal and external links, how the server transforms links at render time, and how to set up redirects when content moves.
+
+## Internal links
+
+Links to other pages within GitHub Docs must follow a specific format so the server can apply the correct language and version prefix automatically.
+
+**Rules for internal links:**
+
+- Start with a product ID: `/actions/...`, `/admin/...`, `/get-started/...`
+- Include the entire filepath from the product root
+- Do not include the file extension (`.md` or `.mdx`)
+- Do not include a language prefix (`/en/`) or version prefix (`/enterprise-server@3.10/`)
+
+```markdown
+<!-- Correct -->
+[AUTOTITLE](/actions/creating-actions/about-custom-actions)
+[AUTOTITLE](/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
+
+<!-- Incorrect – includes file extension -->
+[AUTOTITLE](/actions/creating-actions/about-custom-actions.md)
+
+<!-- Incorrect – includes language prefix -->
+[AUTOTITLE](/en/actions/creating-actions/about-custom-actions)
+```
+
+### AUTOTITLE
+
+Use `AUTOTITLE` as the link text for all internal links to other articles. At render time, the server replaces `AUTOTITLE` with the article's current title, so the link text stays accurate even when titles change.
+
+```markdown
+For more information, see [AUTOTITLE](/actions/writing-workflows/about-workflows).
+
+For more information, see [AUTOTITLE](/actions/writing-workflows/about-workflows#triggering-a-workflow).
+```
+
+<Note>
+  `AUTOTITLE` does not work for same-page section links. When linking to a section on the same page, write the full header text manually.
+
+  ```markdown
+  For more information, see [Preventing transformations](#preventing-transformations), later in this article.
+  ```
+</Note>
+
+### Linking to specific sections
+
+To link to a section heading in another article, append the anchor to the path:
+
+```markdown
+For more information, see [AUTOTITLE](/contributing/style-guide-and-content-model/style-guide#alerts).
+```
+
+When linking to two or more specific sections in the same article, name the article at the end:
+
+```markdown
+See [Heading one](/path/to/article#section-one) and [Heading two](/path/to/article#section-two) in "Article title."
+```
+
+### Linking to a specific tool
+
+If a link goes to an article with a tool switcher and you want to pre-select a specific tool, add the `?tool=` query parameter and indicate the tool in surrounding text:
+
+```markdown
+For more information, see the GitHub CLI documentation in [AUTOTITLE](/issues/tracking-your-work-with-issues/using-issues/creating-an-issue?tool=cli).
+```
+
+## How the server transforms internal links
+
+When GitHub Docs renders a page, all internal links undergo transformations in `src/content-render/unified/rewrite-local-links.ts`. A link written as:
+
+```
+/actions/creating-actions/about-custom-actions
+```
+
+Renders on GitHub.com with the language code prepended:
+
+```
+/en/actions/creating-actions/about-custom-actions
+```
+
+Renders on GitHub Enterprise Server with both the language code and version:
+
+```
+/en/enterprise-server@3.10/actions/creating-actions/about-custom-actions
+```
+
+This is why internal links must not include language or version prefixes—they are applied automatically based on the reader's context.
+
+### Preventing transformations
+
+To prevent a link from being Enterprise-ified (for example, when linking to a Dotcom-only article from Enterprise content), include the preferred version in the path:
+
+```markdown
+[GitHub's Terms of Service](/free-pro-team@latest/github/site-policy/github-terms-of-service)
+```
+
+With the version explicitly included, the server does not apply an automatic version prefix.
+
+### Linking to the current article in a different version
+
+When you want to link to the same article in a different product version, use the `currentArticle` property instead of hardcoding the path. This ensures the link keeps working even if the article URL changes:
+
+```markdown
+{% ifversion fpt %}
+Organizations that use GitHub Enterprise Cloud can choose to allow publicly or privately published sites.
+For more information, see [the GitHub Enterprise Cloud documentation](/enterprise-cloud@latest/{{ currentArticle }}).
+{% endif %}
+```
+
+To link to a different article in a specific version:
+
+```markdown
+For more information, see [ARTICLE TITLE](/) in the VERSION documentation.
+```
+
+To link to the same article in a specific version:
+
+```markdown
+For more information, see [the VERSION documentation](/VERSION/{{ currentArticle }}).
+```
+
+## External links
+
+For links to pages outside GitHub Docs, use standard Markdown link syntax with the full page title and destination site name. Do not put the link in quotation marks.
+
+```markdown
+<!-- Correct -->
+See [Add subtitles and captions](https://support.google.com/youtube/answer/2734796) in the YouTube documentation.
+
+<!-- Incorrect – missing site name -->
+See [Add subtitles and captions](https://support.google.com/youtube/answer/2734796).
+
+<!-- Incorrect – uses generic anchor text -->
+See [the YouTube docs](https://support.google.com/youtube/answer/2734796).
+```
+
+It is not necessary to link to an external product's website simply because you mention the product by name.
+
+### External sites that are not rewritten
+
+Some external URLs are registered in `src/redirects/lib/external-sites.json`. Links to these sites are not rewritten by the server. The file stores key-value pairs where the key is the old internal path and the value is the external destination:
+
+```json
+{
+  "/github-status": "https://www.githubstatus.com/",
+  "/articles/github-security": "https://github.com/security"
+}
+```
+
+## Link formatting rules
+
+- Do not repeat the same link more than once in the same article.
+- Do not include punctuation marks inside hyperlink brackets.
+- Do not use inline links where words in a sentence are hyperlinked without additional context. This pattern is difficult to translate and read.
+- Do not apply styling (bold, italics) to links or wrap them in quotation marks.
+
+```markdown
+<!-- Correct -->
+OAuth2 tokens can be acquired programmatically. For more information, see [AUTOTITLE](/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
+
+<!-- Incorrect – inline link, punctuation inside brackets -->
+Read [more about OAuth2.](/apps/building-integrations/setting-up-and-registering-oauth-apps/)
+```
+
+Introduce links with "For more information, see" or "see" when context makes the purpose of the link obvious. Link text should be the article title.
+
+## Legacy filepaths and redirects for links
+
+GitHub Docs contains many links that use legacy filepaths like `/article/article-name` or `/github/article-name`, and links that reference articles by old names. These links work because of redirects, but they are technically bugs. When you add a new link, always use the current filepath and article name—not a legacy path.
+
+## Configuring redirects for moved content
+
+When an article's title, location, or version changes, create a redirect so existing bookmarks and external links continue to work.
+
+### Redirecting across files (same version)
+
+If you rename or move an article and want the old URL to redirect to the new one for all versions, add `redirect_from` to the new article's frontmatter:
+
+```yaml
+---
+title: Creating your first commit
+redirect_from:
+  - /content/get-started/all-about-commits
+---
+```
+
+The `redirect_from` value is the old path without the content directory prefix or file extension. Multiple old paths can be listed:
+
+```yaml
+redirect_from:
+  - /articles/first-launch
+  - /articles/error-github-enterprise-version-is-too-old
+  - /articles/getting-started-with-github-for-windows
+```
+
+### Automatic version redirects
+
+If a URL is entered without a version (`https://docs.github.com/ARTICLE`), the site automatically redirects to the first available version in this order of precedence:
+
+1. Free, Pro, or Team (`fpt`)
+2. GitHub Enterprise Cloud (`ghec`)
+3. GitHub Enterprise Server (`ghes`)
+
+So if an article is only available in `ghec` and `ghes`, `https://docs.github.com/ARTICLE` redirects to the Enterprise Cloud version automatically.
+
+### Redirecting across versions
+
+When you want a URL for one version to redirect to a different version (or to a different page entirely), update `src/redirects/lib/static/redirect-exceptions.txt`.
+
+Each entry lists the destination path (with version), followed by an indented list of source paths:
+
+```text
+/enterprise-cloud@latest/organizations/managing-membership-in-your-organization/exporting-member-information-for-your-organization
+  - /enterprise-server@3.3/organizations/managing-membership-in-your-organization/exporting-member-information-for-your-organization
+  - /enterprise-server@3.4/organizations/managing-membership-in-your-organization/exporting-member-information-for-your-organization
+  - /enterprise-server@3.5/organizations/managing-membership-in-your-organization/exporting-member-information-for-your-organization
+```
+
+Use this when, for example, you remove the `fpt` version of an article and want it to redirect to a version lower in the precedence order rather than `ghec`.
+
+### Redirecting to external sites
+
+When content moves entirely outside GitHub Docs, add an entry to `src/redirects/lib/external-sites.json`:
+
+```json
+{
+  "/github-status": "https://www.githubstatus.com/",
+  "/articles/github-security": "https://github.com/security"
+}
+```
+
+<Warning>
+  External redirects should be rare. Prefer keeping content on the docs site where possible.
+</Warning>
+
+## Preserving links with anchors
+
+If you know external resources link to a specific section of an article, add an HTML anchor to preserve the link even if the heading text changes:
+
+```markdown
+<!-- Anchor to maintain the current example link. -->
+<a name="section-title-that-might-change"></a>
+
+## New section title
+```
+
+Use an HTML comment to explain why the anchor is present so future contributors do not remove it.
+
+## Quick reference
+
+<AccordionGroup>
+  <Accordion title="Internal link to another article">
+    ```markdown
+    [AUTOTITLE](/product/category/article-name)
+    ```
+  </Accordion>
+  <Accordion title="Internal link to a section in another article">
+    ```markdown
+    [AUTOTITLE](/product/category/article-name#section-heading)
+    ```
+  </Accordion>
+  <Accordion title="Link to same article in a different version">
+    ```markdown
+    {% raw %}[the GitHub Enterprise Cloud documentation](/enterprise-cloud@latest/{{ currentArticle }}){% endraw %}
+    ```
+  </Accordion>
+  <Accordion title="External link">
+    ```markdown
+    [Page title](https://external-site.com/path/to/page) in the External Site documentation.
+    ```
+  </Accordion>
+  <Accordion title="Redirect from an old path (frontmatter)">
+    ```yaml
+    redirect_from:
+      - /old/path/to/article
+    ```
+  </Accordion>
+  <Accordion title="Prevent Enterprise version transformation">
+    ```markdown
+    [GitHub's Terms of Service](/free-pro-team@latest/github/site-policy/github-terms-of-service)
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,203 @@
+---
+title: Content model
+description: How GitHub Docs is organized — content types, index pages, and the frontmatter that drives site navigation.
+---
+
+The GitHub Docs site is built from Markdown files in the `/content` directory. Every page, category, and product follows a strict content model. Understanding that model lets you place new content correctly, wire up navigation, and choose the right layout from the start.
+
+## Content types
+
+Every article has a `contentType` frontmatter field that declares what kind of content it is. The site uses this value to filter articles on product guides pages (when using `layout: product-guides`) and to apply the right structural expectations during linting.
+
+<ParamField path="contentType" type="string">
+  One of `get-started`, `concepts`, `how-tos`, `reference`, `tutorials`, `rai`, `landing`, `homepage`, or `other`.
+</ParamField>
+
+<Columns cols={2}>
+  <Card title="get-started" icon="rocket">
+    Introductory content for people who are new to a feature. Orientates the reader and links to next steps.
+  </Card>
+  <Card title="concepts" icon="book-open">
+    Explains background knowledge — what something is and why it works the way it does. No step-by-step procedures.
+  </Card>
+  <Card title="how-tos" icon="list-checks">
+    Task-based articles that walk the reader through completing a specific goal.
+  </Card>
+  <Card title="reference" icon="database">
+    Structured factual content: API parameters, configuration options, syntax tables. Designed to be scanned, not read linearly.
+  </Card>
+  <Card title="tutorials" icon="graduation-cap">
+    End-to-end learning exercises with a concrete outcome. Longer than how-tos and include explanatory context.
+  </Card>
+  <Card title="rai" icon="shield">
+    Responsible AI content. Only used for files that live in directories with `responsible-use` in the name.
+  </Card>
+  <Card title="landing" icon="layout-panel-top">
+    Product landing pages — only applies to `content/<product>/index.md` files.
+  </Card>
+</Columns>
+
+## Index pages
+
+Every product, category, and map topic has an `index.md` file that acts as the landing page for that section. The `index.md` must declare a `children` array that lists every page directly nested under it.
+
+<Warning>
+  The site **only** knows about paths that appear in a `children` array. If a file exists in the `/content` directory but is not listed in a parent `index.md`, its URL returns 404.
+</Warning>
+
+A typical category `index.md` looks like this:
+
+```yaml
+---
+title: Managing your account and profile
+intro: You can manage information about yourself and your GitHub account.
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+children:
+  - /customizing-your-profile
+  - /managing-your-personal-account-settings
+  - /managing-subscription-and-notifications-on-github
+---
+```
+
+The paths in `children` are relative to the current `index.md`. They point to either a subdirectory (which must itself have an `index.md`) or a `.md` file (written without the extension).
+
+## Product landing pages
+
+A product landing page (`layout: product-landing`) is the main entry point for a top-level GitHub product such as Actions or Codespaces. In addition to `children`, these pages support `featuredLinks` to highlight key articles, and optionally `changelog` to pull recent entries from the GitHub Changelog.
+
+```yaml
+---
+title: GitHub Actions
+shortTitle: GitHub Actions
+intro: Automate, customize, and execute your software development workflows right in your repository.
+layout: product-landing
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+children:
+  - /quickstart
+  - /learn-github-actions
+  - /using-workflows
+featuredLinks:
+  gettingStarted:
+    - /actions/quickstart
+  startHere:
+    - /actions/learn-github-actions/understanding-github-actions
+  popular:
+    - /actions/using-workflows/workflow-syntax-for-github-actions
+    - /actions/using-workflows/events-that-trigger-workflows
+  popularHeading: Most-used reference pages
+changelog:
+  label: actions
+  prefix: 'GitHub Actions: '
+---
+```
+
+### featuredLinks sections
+
+| Key | Purpose |
+|-----|---------|
+| `gettingStarted` | Links shown in the "Get started" column |
+| `startHere` | Links shown in the "Start here" column |
+| `guideCards` | Links displayed as guide cards |
+| `popular` | Links shown under the "Popular" heading (or a custom `popularHeading`) |
+| `videos` | Array of `{ title, href }` objects for a video section |
+
+## The homepage
+
+The homepage (`content/index.md`) is the only file that uses `childGroups`. Where a normal index page lists children as a flat array, the homepage groups them into named sections displayed in the main content area.
+
+```yaml
+---
+title: GitHub Docs
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+children:
+  - /get-started
+  - /account-and-profile
+  - /actions
+  - /codespaces
+childGroups:
+  - name: Get started
+    icon: rocket
+    children:
+      - /get-started
+  - name: CI/CD and DevOps
+    icon: gear
+    children:
+      - /actions
+      - /codespaces
+---
+```
+
+Every path in a `childGroups.children` array must also appear in the top-level `children` array.
+
+## Product guides pages
+
+A product guides page (for example, the [Actions guides page](https://docs.github.com/en/actions/guides)) uses `layout: product-guides` and renders a filterable list of articles. You can populate it two ways:
+
+- **`learningTracks`** — references named learning tracks defined in `data/learning-tracks/*.yml`. The featured track is configured in that YAML file.
+- **`includeGuides`** — an explicit list of article paths. Each article must have a `contentType` in its frontmatter for the filter UI to work.
+
+```yaml
+---
+title: Guides
+layout: product-guides
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+learningTracks: actions
+includeGuides:
+  - /actions/guides/about-continuous-integration
+  - /actions/guides/setting-up-continuous-integration-using-workflow-templates
+  - /actions/guides/building-and-testing-nodejs
+---
+```
+
+## Journey pages
+
+Journey landing pages (`layout: journey-landing`) present a set of sequential learning paths. Each path is a `journeyTracks` entry with an `id`, a `title`, an optional `description`, and an ordered `guides` array.
+
+```yaml
+---
+title: Learn GitHub Actions
+layout: journey-landing
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+journeyTracks:
+  - id: getting_started
+    title: 'Getting started with {% data variables.product.prodname_actions %}'
+    description: 'Learn the basics of GitHub Actions.'
+    guides:
+      - href: /actions/quickstart
+      - href: /actions/learn-github-actions
+        alternativeNextStep: 'Want to skip ahead? See [AUTOTITLE](/actions/using-workflows).'
+      - href: /actions/using-workflows
+  - id: advanced
+    title: 'Advanced {% data variables.product.prodname_actions %}'
+    guides:
+      - href: /actions/using-workflows/workflow-syntax-for-github-actions
+      - href: /actions/deployment/deploying-with-github-actions
+---
+```
+
+The `alternativeNextStep` field renders a branch prompt beneath a step — useful when readers might want to skip ahead or take a different path through the material. It supports Liquid variables and `[AUTOTITLE]` links.
+
+## How the site discovers pages
+
+The site build does not crawl the filesystem. It walks the `children` graph starting from `content/index.md`. Every reachable path becomes a valid URL; everything else does not exist from the site's perspective.
+
+This means:
+
+- Adding a new article requires both creating the `.md` file **and** listing it in the parent `index.md`.
+- Renaming or moving a file requires updating the `children` entry and adding a `redirect_from` entry on the new page.
+- Deleting a file requires removing it from `children` (and adding a redirect if the URL should remain accessible).

@@ -1,0 +1,76 @@
+---
+title: "Deployments"
+description: "How GitHub Docs deployments work, including the merge queue, production rollout timing, staging environments, and branch cleanup."
+---
+
+GitHub Docs deployments are automated. When a pull request is merged, the changes flow through a deployment pipeline that publishes them to [docs.github.com](https://docs.github.com) without any manual intervention. This page explains how that pipeline works.
+
+## Two repositories
+
+GitHub Docs runs from two repositories:
+
+| Repository | Visibility | Purpose |
+|------------|------------|---------|
+| [`github/docs`](https://github.com/github/docs) | Public | Community contributions, content source |
+| `github/docs-internal` | Private | Internal GitHub team work, additional configuration |
+
+External contributors work exclusively in `github/docs`. The deployer service, maintained by the `@github/docs-engineering` team, handles deployment for both repositories.
+
+## Merge queue
+
+The `main` branch in `github/docs` uses a [merge queue](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request-with-a-merge-queue).
+
+When a pull request is approved and ready to merge, it enters the queue rather than merging directly. The merge queue runs required checks on the combined state of the queue (your changes together with any other queued pull requests) before merging to `main`. This prevents individual pull requests from breaking the build for others.
+
+<Note>
+  You do not need to do anything to add your pull request to the merge queue. A maintainer will add it after approval.
+</Note>
+
+## Production deployments
+
+Once a pull request merges to `main`, the deployer service automatically picks up the change and publishes it to [docs.github.com](https://docs.github.com).
+
+<Steps>
+  <Step title="Pull request merges to main">
+    The merge queue completes all checks and merges the pull request into the `main` branch.
+  </Step>
+  <Step title="Deployment is triggered">
+    The deployer service detects the new commit on `main` and starts a production deployment automatically.
+  </Step>
+  <Step title="Changes go live">
+    The updated content is published to docs.github.com. This can take **up to 24 hours** from the time of merge.
+  </Step>
+  <Step title="Status is displayed on the pull request">
+    The deployment status is shown on the pull request's page on github.com once the deployment completes.
+  </Step>
+</Steps>
+
+<Tip>
+  After your pull request merges, you can track its deployment status directly on the PR page. Look for the **Deployments** section in the sidebar.
+</Tip>
+
+## Staging environments (review deployments)
+
+Review deployments provide a live preview of a pull request's changes before it merges to `main`. These staging environments let reviewers see how content changes look on the actual site without affecting production.
+
+<Note>
+  Review deployment configuration is managed by the `@github/docs-engineering` team. Details about available staging environments for a specific pull request will appear in the pull request's deployment section on GitHub.
+</Note>
+
+## Branch cleanup
+
+After a pull request is closed — whether merged or not — the source branch is automatically deleted. This keeps the repository clean and avoids accumulating stale branches.
+
+<Warning>
+  Make sure you have committed and pushed all work you want to keep before closing a pull request. Branches are deleted automatically after the PR closes and cannot be recovered from the repository.
+</Warning>
+
+## Summary
+
+| Event | What happens |
+|-------|-------------|
+| PR approved | Maintainer adds it to the merge queue |
+| Merge queue checks pass | PR merges to `main` |
+| Commit lands on `main` | Production deployment starts automatically |
+| Deployment completes | Changes are live on docs.github.com (up to 24 hours after merge) |
+| PR closes | Source branch is automatically deleted |

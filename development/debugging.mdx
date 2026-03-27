@@ -1,0 +1,200 @@
+---
+title: "Debugging the application"
+description: "Attach a debugger in VS Code, understand nodemon restarts, use fixture tests, and run the test suite."
+---
+
+This page covers debugging the GitHub Docs Node.js application — not content files. These tools help you inspect server behavior, middleware, and application logic.
+
+## Debugging with VS Code
+
+The repository includes a pre-configured VS Code debug configuration that works with nodemon's `--inspect` flag.
+
+<Steps>
+  <Step title="Build the application">
+    If you haven't already, run the build step before starting:
+
+    ```bash
+    npm run build
+    ```
+  </Step>
+
+  <Step title="Start the server in debug mode">
+    ```bash
+    npm run debug
+    ```
+
+    This starts nodemon with the `--inspect` flag, which opens the V8 inspector on `127.0.0.1:9229` and prints a message like:
+
+    ```
+    Debugger listening on ws://127.0.0.1:9229/...
+    ```
+  </Step>
+
+  <Step title="Open the Debug panel in VS Code">
+    Click the **Run and Debug** icon in the Activity Bar (or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> on Windows/Linux, <kbd>⇧⌘D</kbd> on macOS).
+  </Step>
+
+  <Step title="Select the Node: Nodemon configuration">
+    In the **Run and Debug** panel, open the configuration dropdown at the top and select **Node: Nodemon**.
+
+    Press <kbd>F5</kbd> or click the green **Start Debugging** button.
+
+    VS Code will display all running Node processes. Look for the process that was started with the `--inspect` flag.
+  </Step>
+
+  <Step title="Attach to the inspected process">
+    Select the node process that shows the `--inspect` flag. VS Code will attach the debugger.
+
+    You can now set breakpoints, step through code, inspect variables, and use the Debug Console.
+  </Step>
+</Steps>
+
+<Tip>
+  For more detail on the VS Code + nodemon workflow, see the [VS Code nodemon recipe](https://github.com/Microsoft/vscode-recipes/tree/main/nodemon) and the [VS Code debugging guide](https://code.visualstudio.com/docs/editor/debugging).
+</Tip>
+
+<Warning>
+  The Node.js debugger only helps with issues in the application code (TypeScript source in `src/`). It does not help debug content rendering issues in Markdown or Liquid template files.
+</Warning>
+
+## Understanding nodemon restarts
+
+nodemon watches specific file types and directories and restarts the server when it detects changes. Knowing what does and does not trigger a restart saves debugging time.
+
+**Triggers a restart:**
+
+- Any `.ts`, `.json`, `.yml`, `.md`, `.html`, or `.scss` file inside a watched directory (mainly `src/`)
+- Changes to `package.json` or other config files at the root
+
+**Does not trigger a restart:**
+
+- `content/` — documentation Markdown files
+- `data/reusables/`, `data/variables/`, `data/glossaries/`, `data/product-examples/`, `data/learning-tracks/`
+- `assets/`, `script/`, `tests/`, `translations/`, `rest-api-description/`, `semmle-code/`
+
+Content files are loaded dynamically per request, so you can edit them and refresh your browser without waiting for a restart. Application source files require a restart, which nodemon handles automatically.
+
+## Key environment variables for development
+
+Set these in your `.env` file or inline when starting the server.
+
+| Variable | Example value | Effect |
+| -------- | ------------- | ------ |
+| `NODE_ENV` | `development` | Enables development-mode logging and error output. Set automatically by `npm start`. |
+| `ENABLED_LANGUAGES` | `en,ja,pt` | Controls which language trees are loaded. Defaults to `en`. |
+| `ELASTICSEARCH_URL` | `http://localhost:9200` | Points search to a local Elasticsearch instance instead of production. |
+| `TRANSLATIONS_ROOT` | `/path/to/translations` | Overrides the default translations directory. |
+| `ENABLE_FASTLY_TESTING` | `true` | Enables the `/fastly-cache-test` route for inspecting Fastly cache headers. |
+| `HYDRO_ENDPOINT` | _(your endpoint)_ | Sends analytics events to a local mock instead of production. |
+
+<Note>
+  When `ELASTICSEARCH_URL` is not set, search requests are proxied to the production endpoint. Set it only if you're working on search indexing or query logic.
+</Note>
+
+## Using the fixture server for testing
+
+The fixture server loads a small, self-contained content tree from `src/fixtures/fixtures` instead of the full content directory. It is the recommended way to test application behavior in isolation.
+
+<CodeGroup>
+
+```bash Start fixture dev server
+npm run fixture-dev
+```
+
+```bash Start fixture server with debugger
+npm run fixture-dev-debug
+```
+
+```bash Run fixture tests
+npm run fixture-test
+```
+
+```bash Run a specific fixture test file
+npm run fixture-test -- src/fixtures/tests/your-test.ts
+```
+
+</CodeGroup>
+
+The fixture content includes a small but representative set of pages, layouts, and data that exercise the full rendering pipeline without loading the entire `content/` tree.
+
+## Running the test suite
+
+The project uses [Vitest](https://vitest.dev/) as its test runner. All test commands are available via `npm test`.
+
+### Running all tests
+
+```bash
+npm test
+```
+
+### Running a specific test file or directory
+
+```bash
+npm test -- src/your-feature/tests/
+```
+
+### Scoped test commands
+
+Several pre-configured test commands set the right environment variables automatically:
+
+<CodeGroup>
+
+```bash Fixture tests
+npm run test:fixtures
+```
+
+```bash Article API tests
+npm run test:article-api
+```
+
+```bash Search tests (requires local Elasticsearch)
+npm run test:search
+```
+
+```bash Landing page tests
+npm run test:landings
+```
+
+```bash Language tests (loads all languages)
+npm run test:languages
+```
+
+```bash Changelog tests
+npm run test:changelogs
+```
+
+</CodeGroup>
+
+<Note>
+  `npm run test:search` and `npm run test:languages` require a running local Elasticsearch instance at `http://localhost:9200`. Start one via Docker before running these.
+</Note>
+
+### Type checking
+
+Run the TypeScript compiler without emitting files to check for type errors across the codebase:
+
+```bash
+npm run tsc
+```
+
+### Linting
+
+```bash
+npm run lint          # ESLint on all .ts and .tsx files
+npm run lint-content  # Content linter for Markdown files in content/ and data/
+npm run prettier      # Auto-format .ts, .tsx, .scss, .yml, and .yaml files
+npm run prettier-check  # Check formatting without making changes
+```
+
+## Quick reference
+
+| Command | Description |
+| ------- | ----------- |
+| `npm run debug` | Start server with Node.js inspector on port 9229 |
+| `npm run fixture-dev` | Start fixture server (lightweight content tree) |
+| `npm run fixture-dev-debug` | Fixture server with inspector attached |
+| `npm run fixture-test` | Run tests against fixture content |
+| `npm test` | Run the full Vitest test suite |
+| `npm run tsc` | Type-check the TypeScript codebase |
+| `npm run lint` | Lint TypeScript source files |
+| `npm run lint-content` | Lint Markdown content files |

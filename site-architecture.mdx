@@ -1,0 +1,157 @@
+---
+title: "Site architecture"
+description: "A map of the github/docs repository — how content, data, and application source are organized, and how the Node.js/Express/Next.js server fits together."
+---
+
+The `github/docs` repository is a monorepo containing both the documentation content and the application that serves it. Understanding the directory structure helps you find the right place to make changes, whether you're editing an article or working on the platform itself.
+
+## Repository overview
+
+<Tree>
+  <Tree.Folder name="github/docs" defaultOpen>
+    <Tree.Folder name="content/" defaultOpen>
+      <Tree.File name="README.md" />
+      <Tree.Folder name="actions/">
+        <Tree.File name="index.md" />
+      </Tree.Folder>
+      <Tree.Folder name="rest/">
+        <Tree.File name="index.md" />
+      </Tree.Folder>
+    </Tree.Folder>
+    <Tree.Folder name="data/" defaultOpen>
+      <Tree.Folder name="reusables/" />
+      <Tree.Folder name="variables/" />
+      <Tree.Folder name="learning-tracks/" />
+      <Tree.Folder name="graphql/" />
+      <Tree.Folder name="features/" />
+    </Tree.Folder>
+    <Tree.Folder name="src/" defaultOpen>
+      <Tree.Folder name="frame/" />
+      <Tree.Folder name="content-render/" />
+      <Tree.Folder name="content-linter/" />
+      <Tree.Folder name="rest/" />
+      <Tree.Folder name="search/" />
+      <Tree.Folder name="graphql/" />
+      <Tree.Folder name="webhooks/" />
+    </Tree.Folder>
+    <Tree.Folder name="contributing/" />
+    <Tree.File name="package.json" />
+  </Tree.Folder>
+</Tree>
+
+## Content directory
+
+The `/content` directory holds all English Markdown documentation. It is organized by product, matching the URL structure of docs.github.com:
+
+```
+content/
+├── actions/          → docs.github.com/en/actions
+├── codespaces/       → docs.github.com/en/codespaces
+├── github-cli/       → docs.github.com/en/github-cli
+├── rest/             → docs.github.com/en/rest
+├── admin/            → docs.github.com/en/admin
+└── ...
+```
+
+Every directory has an `index.md` that acts as the landing page for that product or category. The `index.md` must include a `children` frontmatter property listing its sub-pages — the site only renders paths listed there. Pages not referenced in `children` return a 404.
+
+Content files use:
+
+- **YAML frontmatter** — metadata like `title`, `intro`, `versions`, `redirect_from`, and layout options
+- **Markdown** — standard CommonMark with GitHub Flavored Markdown extensions
+- **Liquid templating** — conditional versioning, reusables, variables, and tool-switching tags
+
+<Tip>
+  The `/content` directory is where external contributors are welcome. Edits to `.md` files here — fixing typos, improving explanations, updating outdated content — are the most common type of contribution.
+</Tip>
+
+## Data directory
+
+The `/data` directory contains structured content that is referenced from Markdown files via Liquid tags. It is not directly served as pages.
+
+| Subdirectory | Purpose |
+|--------------|---------|
+| `data/reusables/` | Short Markdown snippets reused across multiple articles. Referenced with `{% data reusables.topic.reusable-name %}` |
+| `data/variables/` | Short text strings (product names, version numbers). Referenced with `{% data variables.product.product_name %}` |
+| `data/learning-tracks/` | YAML definitions for learning track sequences shown on product landing pages |
+| `data/graphql/` | GraphQL schema data used to auto-generate the GraphQL reference docs |
+| `data/features/` | Feature flag definitions used to gate content by product version |
+
+<Note>
+  External contributors may edit files in `data/reusables/` and `data/variables/`. Other subdirectories under `/data` are typically managed by automated pipelines or GitHub staff.
+</Note>
+
+## Source directory
+
+The `/src` directory contains the Node.js application that serves docs.github.com. It follows a **subject folder** pattern — each subdirectory represents a distinct capability of the site, with its own `README.md`, `lib/`, `middleware/`, `pages/`, `components/`, and `tests/`.
+
+<Columns cols={2}>
+  <Card title="src/frame" icon="window-maximize">
+    The application shell: header, footer, global sidebar, routing, and middleware that doesn't belong to a more specific subject. Also contains `lib/frontmatter.ts`, which defines and validates all supported frontmatter fields.
+  </Card>
+  <Card title="src/content-render" icon="file-code">
+    Renders Markdown content into HTML. Handles Liquid processing, unified/remark pipeline, internal link rewriting, and mini table of contents generation.
+  </Card>
+  <Card title="src/content-linter" icon="circle-check">
+    Custom markdownlint rules that enforce style, structure, and quality across all documentation. Rules live in `src/content-linter/lib/linting-rules/`. Run via `npm run lint-content`.
+  </Card>
+  <Card title="src/rest" icon="plug">
+    REST API reference documentation pipeline. Consumes OpenAPI specs from [`github/rest-api-description`](https://github.com/github/rest-api-description) and generates Markdown pages in `content/rest/` through an automated workflow.
+  </Card>
+  <Card title="src/search" icon="magnifying-glass">
+    Full-text search infrastructure. Indexes documentation content for Elasticsearch and serves search queries from the site's search UI and API endpoints.
+  </Card>
+  <Card title="src/graphql" icon="diagram-project">
+    GraphQL reference docs pipeline. Generates reference pages from the GraphQL schema data stored in `data/graphql/`.
+  </Card>
+  <Card title="src/webhooks" icon="webhook">
+    Webhook reference documentation. Part of the same automated pipeline as REST — triggered by the same sync workflow that processes OpenAPI specs.
+  </Card>
+  <Card title="src/languages" icon="globe">
+    Language detection and internationalization support. Defines supported language codes and configures which languages are served. See `src/languages/lib/languages.ts`.
+  </Card>
+</Columns>
+
+## The server
+
+The docs.github.com site is a **dynamic Node.js web server** built on Express with Next.js for React rendering. It was not always this way:
+
+```
+Ruby on Rails → Jekyll (static) → Nanoc (static) → Node.js/Express/Next.js (current)
+```
+
+Despite the stack changes, many authoring conventions from the original Jekyll era are preserved:
+
+- Content is written in Markdown files in `/content`
+- Files support [Liquid templating](https://shopify.github.io/liquid/)
+- Data files in `/data` are available to templates via `{% data %}` tags
+- Markdown files use Jekyll-style frontmatter
+- The `redirect_from` frontmatter behavior (from the `jekyll-redirect-from` plugin) is still supported
+
+The server handles:
+
+- **HTTP redirects** — including `redirect_from` frontmatter and external site redirects
+- **Language detection** — via `Accept-Language` headers and URL prefixes (`/en/`, `/ja/`, etc.)
+- **Version routing** — URLs include the product version for GitHub Enterprise Server (e.g., `/en/enterprise-server@3.12/admin/...`)
+- **Dynamic content** — Liquid conditionals and versioning are evaluated at request time
+
+## Contributing guide directory
+
+The `/contributing` directory contains guides for working on the repository. Most of its content has been superseded by the official [contributing documentation](https://docs.github.com/en/contributing) on docs.github.com, but some files (like `development.md` and `liquid-helpers.md`) remain useful references for local setup and authoring conventions.
+
+## Explore further
+
+<CardGroup cols={2}>
+  <Card title="Local setup" icon="computer" href="/development/setup">
+    Step-by-step instructions for running the site on your machine.
+  </Card>
+  <Card title="Content model" icon="file-lines" href="/content/content-model">
+    How articles, categories, and map topics are structured and connected.
+  </Card>
+  <Card title="Server overview" icon="server" href="/engineering/server-overview">
+    Deep dive into the Express/Next.js application, middleware stack, and request lifecycle.
+  </Card>
+  <Card title="REST pipeline" icon="rotate" href="/engineering/rest-pipeline">
+    How OpenAPI specs become versioned REST reference docs automatically.
+  </Card>
+</CardGroup>

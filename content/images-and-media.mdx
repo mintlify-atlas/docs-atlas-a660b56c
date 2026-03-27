@@ -1,0 +1,269 @@
+---
+title: Images and media
+description: How to add, store, format, and version screenshots, diagrams, and videos in GitHub Docs.
+---
+
+GitHub Docs uses static images—screenshots, diagrams, and graphs—to complement written instructions. Videos are used rarely and only when they provide information that cannot be conveyed well in text. This page covers where images and videos live, how to format them, and the quality standards they must meet.
+
+## When to add a screenshot
+
+Screenshots make articles more visually scannable and help readers locate UI elements. However, they increase page load time, require ongoing maintenance, and can be confusing when captured at different zoom levels than the reader is using.
+
+Add a screenshot only when a UI element is genuinely difficult to find:
+
+<CardGroup cols={1}>
+  <Card title="Add a screenshot when..." icon="check">
+    - The element is small or visually subtle (for example, a small edit button with no visible label).
+    - The element is not immediately visible—for example, it is inside a dropdown menu.
+    - The interface has multiple competing choices that could cause confusion (for example, three different elements that could all be interpreted as "Settings").
+  </Card>
+  <Card title="Do not add a screenshot when..." icon="x">
+    - Text instructions alone make the step clear.
+    - The UI element is visually prominent through size, color, and placement.
+    - You are showing a command or its output—use a code block instead.
+    - The interface shows only simple options like a single checkbox.
+  </Card>
+</CardGroup>
+
+## Screenshot technical requirements
+
+| Requirement | Specification |
+|-------------|---------------|
+| File format | PNG only. No GIFs. |
+| Resolution | 144 dpi |
+| Width | 750–1000 pixels for full-column images |
+| File size | 250 KB or less |
+| Naming | Kebab-case, descriptive: `data-pack-purchase-button.png` |
+| macOS captures | Must be retina images |
+
+Screenshots captured on macOS: in Snagit, go to **Snagit** > **Preferences** > **Advanced** and deselect "Scale down retina images when sharing."
+
+## Screenshot visual style
+
+- Show just enough surrounding context to help readers find the element on screen.
+- Resize your browser window to reduce negative space.
+- Use light theme whenever possible.
+  - For GitHub: select "Light default" in your appearance settings.
+  - For VS Code: select "GitHub light default" from the GitHub Theme extension.
+- If your username and avatar appear, replace them with `@octocat`'s username and avatar (`https://avatars.githubusercontent.com/u/583231?v=4`) using browser developer tools.
+- Do not include a cursor in the screenshot.
+
+### Showing dropdown menus
+
+- If your goal is to show the reader where the menu is, show the menu **closed**.
+- If your goal is to help the reader distinguish between options inside the menu, show the menu **open** and without focus (no cursor or hover state).
+
+## Highlighting elements
+
+To draw attention to a specific UI element, use the GitHub Docs Snagit theme to apply a dark orange contrasting stroke around the element.
+
+- Color: `fg.severe` from the Primer Design System (HEX `#BC4C00`, RGB `188, 76, 0`)
+- Corner rounding: 4 px
+- Spacing: gap between UI element and stroke should be approximately equal to the stroke width
+
+<Steps>
+  <Step title="Download the Snagit theme">
+    Navigate to `snagit-theme-github-docs.snagtheme` in the `github/docs` repository and download it.
+  </Step>
+  <Step title="Import into Snagit">
+    Open Snagit, select the **Shape** tool, then select **Import** under "Quick styles" and choose the downloaded theme file.
+  </Step>
+  <Step title="Apply the highlight">
+    Open a screenshot in Snagit, select the dark orange rectangle from the Shapes sidebar, and drag across the UI element you want to highlight. Adjust the size by dragging edges.
+  </Step>
+  <Step title="Set resolution and export">
+    In the "Resize image" dialog, set pixel depth to 144 dpi and pixel width to 1000 px maximum, then export as PNG.
+  </Step>
+</Steps>
+
+## Alt text
+
+Every image must have alt text. Alt text is read by screen readers and appears when an image fails to load.
+
+**Rules for alt text:**
+
+- Express the core idea or meaning of the image, not a literal description.
+- Use 40–150 characters.
+- End with a punctuation mark (usually a period).
+- Do not start with "Image…" or "Graphic…"—screen readers announce this automatically.
+- Begin with the type of graphic: "Screenshot of…" or "Diagram that shows…"
+- Put multi-word UI element names in double quotation marks inside the alt text.
+- Describe any visual highlighting: "…is outlined in dark orange."
+
+**Format for screenshot alt text:**
+
+> Screenshot of the `Product name` + `UI element` shown. The `UI element` + `state of element/controls`, and its `keyboard shortcut XYZ`, are outlined in dark orange.
+
+**Examples:**
+
+```markdown
+![Screenshot of the GitHub committers by repository table. The horizontal kebab icon and "Download CSV report" button are outlined in dark orange.](/assets/images/billing/download-csv.png)
+
+![Screenshot of file options in a GitHub repository. A button with an arrow indicating a dropdown menu, labeled "Code," is outlined in dark orange.](/assets/images/contributing/repository-code-button.png)
+
+![Diagram showing a five-step process by which a GitHub Actions runner can be automatically added to named classes of runners and then requested by specific jobs.](/assets/images/actions/arc-runner-scale-sets.png)
+```
+
+**For diagrams and graphs:** explain the information conveyed by the diagram in the article text, and use alt text to express the core idea without duplicating the page text.
+
+**For command-line interface screenshots:** do not use screenshots to show commands and their output. Instead, use code blocks. Only use CLI screenshots when showing UI elements in a terminal application.
+
+## Image file names
+
+Use descriptive names that include the feature name, action, and UI element. Mirror product language. Use kebab-case. Do not use Liquid conditionals in file names.
+
+| Use | Avoid |
+|-----|-------|
+| `data-pack-purchase-button.png` | `purchase_button.png` |
+| `actions-workflow-run-status.png` | `screenshot1.png` |
+
+When replacing an existing image, keep the existing filename. If you must rename an image, search the repository for all references to the old filename and update them.
+
+## Image storage
+
+Images live in the `/assets/images/` directory. The directory structure organizes images by product version.
+
+```
+/assets/images/
+├── (images for all plans)
+├── enterprise/
+│   ├── enterprise-server/   (images for all GHES releases or current+future)
+│   ├── 3.10/                (images that apply to GHES 3.10 and earlier only)
+│   ├── 3.9/
+│   └── ...
+```
+
+| Directory | Usage |
+|-----------|-------|
+| `/assets/images/` | Images not specific to any enterprise product |
+| `/assets/images/enterprise/enterprise-server/` | Images for all GHES releases, or current and future releases |
+| `/assets/images/enterprise/3.10/` | Images that apply to GHES 3.10 and earlier only |
+
+Image paths in Markdown must start with `/assets` and include the full path with file extension:
+
+```markdown
+![Alt text.](/assets/images/help/settings/settings-account-delete.png)
+```
+
+## Versioning images
+
+When an image is the same across all GitHub plans, no versioning is needed. When it differs by plan or GHES release, use Liquid conditionals.
+
+### Versioning by plan
+
+```markdown
+{% ifversion fpt or ghec %}
+![An image of foo bar for GitHub Free, Pro, Team, and Enterprise Cloud.](/assets/images/foo/bar.png)
+{% else %}
+![An image of foo bar for GitHub Enterprise Server.](/assets/images/enterprise/foo/bar.png)
+{% endif %}
+```
+
+### Versioning by GHES release
+
+If an image changes in GHES 3.10, move the existing image to `/assets/images/enterprise/3.10/` and place the new image at the original path. Then add a Liquid conditional:
+
+```markdown
+{% ifversion fpt or ghec %}
+![Image for GitHub.com.](/assets/images/foo/bar.png)
+{% elsif ghes < 3.10 %}
+![Image for GHES 3.9 and earlier.](/assets/images/enterprise/3.10/foo/bar.png)
+{% else %}
+![Image for GHES 3.10 and later.](/assets/images/enterprise/foo/bar.png)
+{% endif %}
+```
+
+When a GHES release is retired, its numbered directory is removed from `/assets/images/enterprise/`.
+
+## Videos
+
+Videos are used rarely in GitHub Docs. When included, they supplement written text—they never replace it. Videos must be owned by GitHub and must be well-produced.
+
+### When to use a video
+
+<Note>
+  The Docs team does not create or maintain video content. Videos are purely supplemental and are not a content type owned by the Docs team.
+</Note>
+
+Use the following checklist before adding any video:
+
+- Is the video the only effective way to communicate the information?
+- Does GitHub own the video?
+- Is the video well produced (professional narration, clear visuals, trusted source)?
+- Is it accessible to the broadest group of users?
+- Is it less than five minutes long?
+- Does it have a specific audience and purpose?
+
+If the answer to any of these is "no," the video is not suitable for GitHub Docs.
+
+### Video types
+
+| Type | Purpose | Max length | Placement |
+|------|---------|------------|-----------|
+| Product overview | Show what the product does and get people interested | Under 1 minute | Landing pages, guides |
+| Feature video | Supplement conceptual or procedural content | 5 minutes | Guides, conceptual articles, procedural articles |
+| Tutorial | Help novice users get started; explain complex workflows | 5 min per video, 15 min total for a series | Guides |
+
+### Accessibility requirements
+
+A video cannot be added to GitHub Docs unless it meets all of these requirements:
+
+- No flashing or strobe effects
+- Closed captions (human-generated or proofread auto-captions)
+- No graphics overlapping where captions appear
+- Legible typography
+- Sufficient contrast on any overlays
+- Text on screen long enough to be read twice before it disappears
+- A proofread descriptive transcript (scene-by-scene description of audio and visual content)
+- Videos do not autoplay
+
+### Video hosting
+
+Videos must be hosted on a platform GitHub owns and controls. Currently, GitHub's videos are hosted on YouTube. Embed videos using YouTube's Privacy Enhanced Mode by replacing the domain:
+
+```markdown
+<!-- Standard URL (do not use) -->
+https://www.youtube.com/embed/VIDEO_ID
+
+<!-- Privacy Enhanced Mode (use this) -->
+https://www.youtube-nocookie.com/embed/VIDEO_ID
+```
+
+### Adding video frontmatter
+
+For landing pages with an embedded video, add these properties to the YAML frontmatter:
+
+```yaml
+title: Example product landing page
+product_video: 'https://www.youtube-nocookie.com/embed/VIDEO_ID'
+product_video_transcript: /content/video-transcripts/transcript-example-video
+```
+
+### Transcripts
+
+Every video linked or embedded in GitHub Docs must have a descriptive transcript. Transcripts are stored as articles in `content/video-transcripts/` with filenames like `transcript-VIDEO-NAME.md`.
+
+Transcript frontmatter:
+
+```yaml
+title: Transcript - VIDEO NAME
+product_video: 'https://www.youtube-nocookie.com/embed/VIDEO_ID'
+```
+
+A transcript includes:
+- All spoken words (do not paraphrase)
+- Speaker identification when there are multiple speakers
+- Descriptions of relevant visual elements and non-speech sounds in brackets: `[Background music plays.]`
+- `End of transcript.` at the end, followed by a link to the product landing page
+
+Do not use Liquid variables or reusables in transcripts—the text must faithfully reflect what is spoken in the video.
+
+### Versioning videos
+
+If a video applies only to specific GitHub plans, version it with Liquid conditionals:
+
+```markdown
+{% ifversion ghec %}
+[Embed video for GitHub Enterprise Cloud]
+{% endif %}
+```

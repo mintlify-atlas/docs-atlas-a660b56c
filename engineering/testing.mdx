@@ -1,0 +1,189 @@
+---
+title: 'Testing'
+description: 'How to run the test suite, what tests exist, and how to add new tests.'
+---
+
+The docs codebase uses [Vitest](https://vitest.dev/) as its test runner. Each `src/` subject directory contains its own `tests/` subdirectory. Playwright handles end-to-end browser tests separately.
+
+## Running tests
+
+### Run the full suite
+
+```bash
+npm test
+```
+
+This runs all Vitest tests matching the patterns in `vitest.config.ts`:
+
+```ts
+include: [
+  '**/*.{test}.?(c|m)[jt]s?(x)',
+  'src/**/tests/*.[jt]s',
+  'src/**/tests/**/*.[jt]s',
+]
+```
+
+Playwright tests (`playwright-*.spec.ts`) are excluded from this glob and must be run separately.
+
+### Run a specific subject
+
+Pass the path of a test directory or file to scope the run:
+
+```bash
+npm test -- src/graphql/tests
+npm test -- src/rest/tests
+npm test -- src/content-linter/tests
+```
+
+### Fixture-based test suites
+
+Several test suites require a local fixture server. Use `npm run fixture-test` instead of `npm test` for these:
+
+```bash
+npm run fixture-test
+```
+
+This sets `ROOT=src/fixtures/fixtures` and runs tests under `src/fixtures/tests/`.
+
+## Named test suite aliases
+
+`package.json` defines several aliases for common test scenarios. Use these instead of constructing long environment variable chains by hand.
+
+<Tabs>
+  <Tab title="Fixtures">
+    ```bash
+    npm run test:fixtures
+    ```
+
+    Runs `src/fixtures/tests/` with the fixture root and translations fixture root set.
+  </Tab>
+
+  <Tab title="Search">
+    ```bash
+    npm run test:search
+    ```
+
+    Runs `src/search/tests/` against a local Elasticsearch instance at `http://localhost:9200/`. You must have Elasticsearch running locally for these tests to pass.
+  </Tab>
+
+  <Tab title="Article API">
+    ```bash
+    npm run test:article-api
+    ```
+
+    Runs `src/article-api/tests/` with `--no-file-parallelism --maxWorkers=1` to avoid port conflicts.
+  </Tab>
+
+  <Tab title="Changelogs">
+    ```bash
+    npm run test:changelogs
+    ```
+
+    Runs `src/changelogs/tests/` with a fixture changelog feed.
+  </Tab>
+
+  <Tab title="Landings">
+    ```bash
+    npm run test:landings
+    ```
+
+    Runs `src/landings/tests/` against the fixture root.
+  </Tab>
+
+  <Tab title="Languages">
+    ```bash
+    npm run test:languages
+    ```
+
+    Runs `src/languages/tests/` with all languages enabled and a local Elasticsearch instance.
+  </Tab>
+</Tabs>
+
+## Playwright end-to-end tests
+
+Browser tests use [Playwright](https://playwright.dev/) and require a running local server pointed at the fixture root.
+
+```bash
+npm run playwright-test
+```
+
+This runs tests in `src/fixtures/playwright.config.ts` using the Google Chrome project. The `start-for-playwright` server must be running, or Playwright's `webServer` configuration will start it automatically.
+
+## Test configuration
+
+The Vitest configuration lives in `vitest.config.ts` at the repo root:
+
+```ts
+export default {
+  test: {
+    include: [
+      '**/*.{test}.?(c|m)[jt]s?(x)',
+      'src/**/tests/*.[jt]s',
+      'src/**/tests/**/*.[jt]s',
+    ],
+    exclude: ['**/tests/playwright-*.spec.ts'],
+    watch: false,
+    alias: {
+      '@/': new URL('./src/', import.meta.url).pathname,
+    },
+    globalSetup: './src/tests/vitest.setup.ts',
+    teardownTimeout: 500,
+  },
+}
+```
+
+The `@/` alias maps to `src/`, so test files can use `import { foo } from '@/rest/lib/config'` instead of relative paths.
+
+## Test structure
+
+Each subject directory follows the same layout:
+
+```
+src/rest/
+└── tests/
+    ├── rest.ts          # Main test file
+    └── fixtures/        # Fixture data used by tests (if needed)
+```
+
+When you add a new subject, create a `tests/` subdirectory inside it. Vitest will automatically discover files matching the glob patterns.
+
+## Adding tests to CI
+
+The `.github/workflows/test.yml` workflow runs Vitest tests in a matrix. Each row in the matrix corresponds to a subject directory name:
+
+```yaml
+matrix:
+  name:
+    - archives
+    - article-api
+    - assets
+    - graphql
+    - rest
+    # ...
+```
+
+When you add a new subject with tests, add its name to the matrix. Then add it to the **required status checks** in the branch protection rules for `main` — tests not listed as required checks will not block merges.
+
+<Warning>
+If you add a test suite to the matrix but forget to add it to required checks, a failing test will not prevent a broken PR from merging.
+</Warning>
+
+## Search tests and Elasticsearch
+
+The `test:search` and `test:languages` suites send real queries to Elasticsearch. They require a running Elasticsearch instance:
+
+```bash
+# Start Elasticsearch (version must match @elastic/elasticsearch in package.json)
+docker run -p 9200:9200 -e "discovery.type=single-node" elasticsearch:8.x
+
+# Then run
+npm run test:search
+npm run test:languages
+```
+
+These tests are skipped automatically when `ELASTICSEARCH_URL` is not set, so they will not break CI runs without the service.
+
+## Getting help
+
+- Slack: `#docs-engineering`
+- Repo: `github/docs-engineering`

@@ -1,0 +1,163 @@
+---
+title: Server overview
+description: Architecture of the docs.github.com Node.js application, including the Express and Next.js stack, subject folder pattern, and key src/ directories.
+---
+
+The docs.github.com application is a dynamic Node.js web server built on Express and Next.js. This page describes how the application is structured, what each major directory does, and how to run it locally.
+
+## History
+
+<Steps>
+  <Step title="Ruby on Rails">
+    The site started as a Ruby on Rails web application.
+  </Step>
+  <Step title="Jekyll">
+    It was converted to a static site powered by [Jekyll](https://jekyllrb.com/), a Ruby static site generator. Many authoring conventions from this era are still in use today: Markdown content files, Liquid templating, frontmatter, and `redirect_from` support.
+  </Step>
+  <Step title="Nanoc">
+    The site migrated to [Nanoc](https://nanoc.app/), another Ruby static site generator.
+  </Step>
+  <Step title="Node.js + Express + Next.js (current)">
+    Today the site is a dynamic Node.js server powered by Express. Middleware handles HTTP redirects, language header detection, and dynamic content generation across all flavors of GitHub product documentation.
+  </Step>
+</Steps>
+
+## Technology stack
+
+The application runs on **Node.js** (v24+) with the following core frameworks:
+
+- **Express** — HTTP server and middleware pipeline
+- **Next.js** — React rendering and routing (currently transitioning from the pages router to the app router)
+- **React** — UI components
+- **TypeScript** — used throughout `src/`
+
+The entry point is `src/frame/server.ts`, which calls `src/frame/start-server.ts` to initialize the Express app.
+
+## Subject folder pattern
+
+The `src/` directory is organized by **subject** rather than by technical role (client, server, stylesheet, etc.). Each subject folder represents a major capability of the site and contains all the code for that capability in one place: middleware, components, scripts, tests, and documentation.
+
+```
+src/
+  xsubject/
+    README.md
+    lib/
+    middleware/
+    components/
+    pages/
+    stylesheets/
+    scripts/
+    tests/
+```
+
+A subject folder is created when a capability has its own specific tests. Not every element listed above is required — use only what the subject needs.
+
+<Note>
+  Two broad folders exist for code that is difficult to assign to a specific subject:
+  - `src/frame/` — cross-cutting infrastructure (header, footer, global sidebar, middleware orchestration)
+  - `src/workflows/` — process automation rather than production application code
+</Note>
+
+## Key src/ directories
+
+<CardGroup cols={2}>
+  <Card title="src/frame/" icon="layout-template">
+    The "spine" of the application. Handles Express server setup, the full middleware pipeline, shared React layout components (header, footer, global sidebar), the `req.context` object, and Next.js integration. Code belongs here only when it is truly cross-cutting — used by three or more subjects — or is fundamental infrastructure.
+  </Card>
+  <Card title="src/content-render/" icon="file-text">
+    Markdown rendering pipeline. Transforms raw Markdown files (with Liquid templating) into HTML served to the client. Includes remark/rehype plugins for GFM, syntax highlighting, and custom GitHub Docs extensions.
+  </Card>
+  <Card title="src/search/" icon="search">
+    Elasticsearch-backed search. Exposes the `/api/search/v1` and `/api/search/ai-search-autocomplete/v1` endpoints, browser-side search components, and the scraping and indexing scripts used to populate the search index.
+  </Card>
+  <Card title="src/rest/" icon="code">
+    REST API reference documentation pipeline. Auto-generates Markdown in `content/rest/` from the OpenAPI description in `github/rest-api-description`. Contains the sync script, generated data files, and config.
+  </Card>
+  <Card title="src/graphql/" icon="git-merge">
+    GraphQL API reference documentation. Similar pipeline to REST — syncs schema data and generates documentation pages for the GraphQL API.
+  </Card>
+  <Card title="src/webhooks/" icon="webhook">
+    Webhook event reference documentation. Shares the sync pipeline with REST and GitHub Apps (`sync-openapi.yml`).
+  </Card>
+  <Card title="src/content-linter/" icon="check-circle">
+    Content quality checking. Runs markdownlint rules and custom rules against Markdown files in `content/` and `data/`. Used in CI and as a pre-commit hook.
+  </Card>
+  <Card title="src/languages/" icon="globe">
+    Internationalization. Language detection middleware, translation file management, and the `ENABLED_LANGUAGES` configuration that controls which languages the server serves.
+  </Card>
+  <Card title="src/versions/" icon="tag">
+    Version management. Detects the requested GitHub product version from URLs and populates `req.context` with version information for conditional rendering.
+  </Card>
+  <Card title="src/redirects/" icon="arrow-right">
+    URL redirect handling. Builds and serves the redirect map derived from `redirect_from` frontmatter and other redirect sources.
+  </Card>
+</CardGroup>
+
+## Middleware pipeline
+
+The middleware pipeline is defined in `src/frame/middleware/index.ts` and executes in this order for every request:
+
+1. **Connection management** — timeout handling and abort detection
+2. **Security and headers** — Helmet, CORS
+3. **Language detection** — parses `Accept-Language` headers and URL language prefix
+4. **Context initialization** — builds the base `req.context` object
+5. **URL normalization and redirects** — resolves redirect rules before serving content
+6. **Page finding** — locates the matching page in the site tree
+7. **Subject-specific middleware** — version detection, feature flags, breadcrumbs, TOC
+8. **Page rendering** — renders Markdown to HTML and sends the response
+9. **Error handling** — 404 and 500 error pages
+
+Each subject registers its middleware into this pipeline. When adding new middleware, decide first whether it belongs in a specific subject directory.
+
+## Build and run
+
+<Tabs>
+  <Tab title="Development">
+    ```bash
+    npm ci          # Clean install of dependencies
+    npm run build   # Next.js build with webpack (run once per branch)
+    npm start       # Start dev server with nodemon on port 4000
+    ```
+
+    The development server starts with `NODE_ENV=development` and `ENABLED_LANGUAGES=en`. It uses `nodemon` to reload on changes to `.ts`, `.json`, `.yml`, `.md`, `.html`, and `.scss` files.
+
+    Visit [http://localhost:4000](http://localhost:4000) when the server is running.
+
+    <Tip>
+      To enable additional languages locally, edit the `start` script in `package.json` and update `ENABLED_LANGUAGES`. For example, set `ENABLED_LANGUAGES='en,ja,pt'` to add Japanese and Portuguese. Restart the server for the change to take effect.
+    </Tip>
+  </Tab>
+  <Tab title="Production / CI">
+    ```bash
+    npm run start-for-ci
+    ```
+
+    Starts the server with `NODE_ENV=production` and `ENABLED_LANGUAGES=en` using `tsx` directly (no nodemon). Used in CI environments and review deployments.
+  </Tab>
+  <Tab title="Debug">
+    ```bash
+    npm run debug
+    ```
+
+    Starts the server in development mode with the Node.js inspector attached (`--inspect`). Connect your debugger to the inspector port for breakpoint debugging.
+  </Tab>
+</Tabs>
+
+## Adding a new subject folder
+
+When a new capability grows to the point of having its own tests, create a subject folder under `src/`:
+
+<Steps>
+  <Step title="Create the folder structure">
+    Create `src/mysubject/` with at minimum a `README.md` and `tests/` directory.
+  </Step>
+  <Step title="Add tests to the workflow">
+    Open `.github/workflows/test.yml` and add an entry for your test files. This file is manually maintained — new test files do not run automatically.
+  </Step>
+  <Step title="Add to branch protection">
+    After your entry in `test.yml` merges to `main`, add it to the branch protection required checks so it gates pull requests.
+  </Step>
+  <Step title="Register middleware (if needed)">
+    If your subject has Express middleware, import it into `src/frame/middleware/index.ts` at the appropriate position in the pipeline.
+  </Step>
+</Steps>

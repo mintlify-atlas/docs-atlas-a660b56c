@@ -1,0 +1,195 @@
+---
+title: Search
+description: How docs.github.com search works, including the Elasticsearch backend, scraping and indexing pipeline, AI search autocomplete, and the search API endpoints.
+---
+
+Search on docs.github.com is powered by **Elasticsearch**. When a user types a query, the server calls Elasticsearch and returns ranked results. This page explains how the search index is built, how to run the pipeline locally, and how the search API works.
+
+## Search types
+
+The site supports two search modes:
+
+<CardGroup cols={2}>
+  <Card title="General search" icon="search">
+    Returns docs pages matching the query, sorted by popularity. Served from the `/api/search/v1` endpoint. Example: query `clone` returns URLs to docs pages about cloning repositories.
+  </Card>
+  <Card title="AI search autocomplete" icon="sparkles">
+    Returns human-readable full-sentence questions that best match the query. Based on previous searches and popular pages. Served from the `/api/search/ai-search-autocomplete/v1` endpoint. Example: query `How do I clone` returns `How do I clone a repository?`
+  </Card>
+</CardGroup>
+
+You can query the general search endpoint directly:
+
+```
+https://docs.github.com/search?version=<VERSION>&language=<LANGUAGE>&query=<QUERY>
+```
+
+- **VERSION**: a numbered GHES version (e.g. `3.12`), `ghec`, or `dotcom`
+- **LANGUAGE**: one of `es`, `ja`, `pt`, `zh`, `ru`, `fr`, `ko`, `de`
+- **QUERY**: any alphanumeric string
+
+## Architecture
+
+Elasticsearch stores pre-built indexes that the server queries at runtime. Indexes are populated through a two-step pipeline:
+
+1. **Scrape** — fetch each page's content via the Article API and write structured JSON records to disk
+2. **Index** — upload those JSON records into Elasticsearch
+
+The scrape step calls the Article API (`/api/article?pathname=<path>`) on a locally running server for each indexable page. Each record includes `title`, `intro`, `breadcrumbs`, `headings`, `content` (plain text, not HTML), and a unique `objectID` (the page permalink).
+
+```json
+{
+  "objectID": "/en/actions/creating-actions/about-custom-actions",
+  "breadcrumbs": "GitHub Actions / Creating actions",
+  "title": "About custom actions",
+  "headings": "About custom actions\nTypes of actions\n...",
+  "content": "Actions are individual tasks that you can combine...",
+  "intro": "Actions are individual tasks that you can combine...",
+  "toplevel": "GitHub Actions",
+  "popularity": 0
+}
+```
+
+<Note>
+  The `objectID` is set explicitly to the page permalink. This guarantees that subsequent indexing runs overwrite existing records rather than creating duplicates.
+</Note>
+
+## Environment configuration
+
+| Variable | Description |
+|---|---|
+| `ELASTICSEARCH_URL` | URL of the Elasticsearch cluster. Required for search tests and manual indexing. Example: `http://localhost:9200/` |
+
+Set this in your `.env` file for local development:
+
+```bash
+ELASTICSEARCH_URL=http://localhost:9200/
+```
+
+## Running the pipeline manually
+
+### General search
+
+Run the scrape and index steps separately, or together using the combined command.
+
+<Steps>
+  <Step title="Start the scrape server">
+    The scrape server is a production-mode instance of the docs app running on port 4002 with minimal rendering enabled:
+
+    ```bash
+    npm run general-search-scrape-server
+    ```
+
+    This sets `MINIMAL_RENDER=true` and `CHANGELOG_DISABLED=true` to reduce memory usage during scraping.
+  </Step>
+  <Step title="Scrape page content">
+    In a separate terminal, run the scrape script against the running server:
+
+    ```bash
+    npm run general-search-scrape -- <scrape-directory>
+    ```
+
+    To scrape a specific language and version only:
+
+    ```bash
+    npx tsx src/search/scripts/scrape/scrape-cli.ts -l en -V fpt <scrape-directory>
+    ```
+
+    The script writes one JSON file per page into the target directory.
+  </Step>
+  <Step title="Index scraped records into Elasticsearch">
+    Upload the scraped records to Elasticsearch:
+
+    ```bash
+    npm run index-general-search -- <scrape-directory>
+    ```
+  </Step>
+</Steps>
+
+**Combined command** — starts the scrape server automatically, waits for it to be ready, runs the scrape, then exits:
+
+```bash
+npm run general-search-scrape-with-server
+```
+
+<Warning>
+  The combined command sets `--max_old_space_size=8192`. Full scrapes across all versions and languages can take 40+ minutes and require significant memory.
+</Warning>
+
+For GHES release scraping specifically:
+
+```bash
+npm run ghes-release-scrape-with-server
+```
+
+### AI search autocomplete
+
+AI search autocomplete data comes from an internal data repository, not from scraping. Clone [`github/docs-internal-data`](https://github.com/github/docs-internal-data) to the root of the docs directory, then index:
+
+```bash
+npm run index-ai-search-autocomplete -- docs-internal-data
+```
+
+### Text analysis
+
+To analyze how Elasticsearch processes text (useful for debugging relevance issues):
+
+```bash
+npm run analyze-text
+```
+
+## Running search tests
+
+Search tests require a running Elasticsearch instance:
+
+```bash
+npm run test:search
+```
+
+This sets `ELASTICSEARCH_URL=http://localhost:9200/` automatically via the test script.
+
+Language tests that involve search also need the variable:
+
+```bash
+npm run test:languages
+```
+
+## Production workflow
+
+In production, search indexes are rebuilt automatically by GitHub Actions:
+
+| Workflow | Schedule | Scope |
+|---|---|---|
+| `index-general-search.yml` | Every 4 hours | All versions and languages |
+| `index-autocomplete-search.yml` | Daily | AI autocomplete data |
+
+You can manually trigger either workflow from the Actions tab. For urgent index updates after merging to `main`, trigger `index-general-search.yml` with a specific version and language to reduce run time (a single version/language takes 5–10 minutes versus ~40 minutes for all).
+
+<Tip>
+  When manually triggering, run only `free-pro-team@latest` + `en` first, then expand to other versions and languages as needed.
+</Tip>
+
+## Key files
+
+| Path | Description |
+|---|---|
+| `src/search/components/Search.tsx` | Browser-side search input component |
+| `src/search/components/SearchResults.tsx` | Browser-side search results rendering |
+| `src/search/middleware/general-search-middleware.ts` | Server-side entrypoint for `/search` page |
+| `src/search/middleware/search-routes/` | API route handlers for search endpoints |
+| `src/search/scripts/scrape/` | Scrape scripts and `lib/build-records-from-api.ts` |
+| `src/search/scripts/index/` | Indexing scripts for general search and autocomplete |
+| `src/search/scripts/analyze-text.ts` | Text analysis utility |
+| `src/search/tests/` | Search tests (require `ELASTICSEARCH_URL`) |
+
+## Search features
+
+- **Typo tolerance** — Elasticsearch returns results even for misspelled queries.
+- **Advanced query syntax** — Supports exact matching with quotes (`"exact phrase"`) and term exclusion with a minus sign (`-excluded`). Enabled in the browser client.
+- **Multilingual** — Indexes exist for each supported language. Search respects the language of the current docs URL.
+- **Weighted attributes** — Title is ranked higher than body content.
+- **Version-scoped** — Each query targets the index for the requested GitHub product version.
+
+<Note>
+  There is a lag of up to 4 hours between content changes merging to `main` and those changes appearing in search results, due to the indexing schedule.
+</Note>

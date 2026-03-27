@@ -1,0 +1,144 @@
+---
+title: "Setting up your local environment"
+description: "Install Node.js, clone the repository, and prepare the GitHub Docs application to run on your machine."
+---
+
+The GitHub Docs site is a dynamic Node.js web application powered by Express. It runs on macOS, Windows, and Linux.
+
+## System requirements
+
+| Requirement | Version |
+| ----------- | ------- |
+| Node.js     | `^24`   |
+| npm         | Bundled with Node.js |
+| Git         | Any recent version |
+
+<Note>
+  The required Node.js version is declared in `package.json` under the `"engines"` field. Using a different major version may cause unexpected build or runtime errors.
+</Note>
+
+## Two ways to get started
+
+<Tabs>
+  <Tab title="Local setup">
+    Set up the full development environment on your own machine. This gives you the most control and the fastest feedback loop for code changes.
+
+    <Steps>
+      <Step title="Install Node.js 24">
+        Download the Node.js 24 LTS installer from [nodejs.org](https://nodejs.org) and run it.
+
+        If you use a Node.js version manager like [`nodenv`](https://github.com/nodenv/nodenv) or [`nvm`](https://github.com/nvm-sh/nvm), switch to Node.js 24 before continuing.
+
+        Verify your installation:
+
+        ```bash
+        node --version
+        # Should output v24.x.x
+        ```
+      </Step>
+
+      <Step title="Clone the repository">
+        ```bash
+        git clone https://github.com/github/docs
+        cd docs
+        ```
+      </Step>
+
+      <Step title="Install dependencies">
+        Use `npm ci` for a clean, reproducible install. This reads `package-lock.json` exactly and does not modify it.
+
+        ```bash
+        npm ci
+        ```
+
+        <Note>
+          Run `npm ci` again any time you pull changes that update `package-lock.json`. You do not need to run it on every pull — only when dependencies change.
+        </Note>
+      </Step>
+
+      <Step title="Build static assets">
+        The build step compiles JavaScript bundles and CSS files using Next.js with webpack.
+
+        ```bash
+        npm run build
+        ```
+
+        This step is required before starting the server for the first time. Like `npm ci`, you only need to re-run it when the build configuration changes — not on every code change.
+      </Step>
+
+      <Step title="Verify your setup">
+        Start the development server to confirm everything is working:
+
+        ```bash
+        npm start
+        ```
+
+        Open [http://localhost:4000](http://localhost:4000) in your browser. You should see the GitHub Docs site running locally.
+
+        Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop the server.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="GitHub Codespaces">
+    GitHub Codespaces gives you a fully configured cloud development environment in your browser — no local installation required. You can be ready to edit, preview, and test changes in minutes.
+
+    <Steps>
+      <Step title="Open the repository in a codespace">
+        Go to [github.com/github/docs](https://github.com/github/docs), click the **Code** button, select the **Codespaces** tab, and click **Create codespace on main**.
+
+        GitHub will provision a container with all required dependencies pre-installed.
+      </Step>
+
+      <Step title="Wait for setup to complete">
+        The codespace runs `npm ci` and `npm run build` automatically as part of its `postCreateCommand`. Watch the terminal for the setup to finish before running any commands.
+      </Step>
+
+      <Step title="Start the server">
+        Once setup is complete, run:
+
+        ```bash
+        npm start
+        ```
+
+        Codespaces will detect the forwarded port and offer to open the site in your browser.
+      </Step>
+    </Steps>
+
+    <Tip>
+      For full details on Codespaces configuration for this repository, see the [Working on GitHub Docs in a codespace](https://docs.github.com/en/contributing/setting-up-your-environment-to-work-on-github-docs/working-on-github-docs-in-a-codespace) guide.
+    </Tip>
+  </Tab>
+</Tabs>
+
+## Environment variables
+
+The repository ships with a `.env.example` file that documents optional environment variables for local development. Copy it to a new `.env` file and fill in values as needed:
+
+```bash
+cp .env.example .env
+```
+
+Key variables you may want to configure:
+
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `ELASTICSEARCH_URL` | _(unset — proxies to production)_ | URL of a local Elasticsearch instance for search. |
+| `ENABLED_LANGUAGES` | `en` | Comma-separated list of language codes to serve. |
+| `TRANSLATIONS_ROOT` | _(unset)_ | Path to a local translations repository. |
+| `HYDRO_ENDPOINT` | _(unset)_ | Endpoint for sending analytics events in local development. |
+| `ENABLE_FASTLY_TESTING` | _(unset)_ | Set to `true` to enable the `/fastly-cache-test` debugging route. |
+
+<Note>
+  When `ELASTICSEARCH_URL` is not set, the application proxies search requests to the production Elasticsearch endpoint. You only need a local Elasticsearch instance if you're working on search functionality.
+</Note>
+
+## Quick reference: setup commands
+
+```bash
+git clone https://github.com/github/docs
+cd docs
+npm ci          # Clean install of all dependencies
+npm run build   # Compile static assets (Next.js + webpack)
+npm start       # Start the development server on port 4000
+```

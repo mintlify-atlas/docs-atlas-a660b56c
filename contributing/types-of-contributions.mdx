@@ -1,0 +1,91 @@
+---
+title: "Types of contributions"
+description: "Learn what kinds of contributions are accepted in the github/docs repository and where to direct other types of feedback."
+---
+
+The `github/docs` repository is the home of the content powering [docs.github.com](https://docs.github.com). The docs team maintains this repository, and community contributions are welcome — but only for specific kinds of changes. This page explains what is and isn't accepted so you can direct your effort to the right place.
+
+## What we accept
+
+<CardGroup cols={2}>
+  <Card title="Issues" icon="circle-exclamation">
+    Bug reports, broken link reports, and content suggestions via GitHub Issues.
+  </Card>
+  <Card title="Content pull requests" icon="code-pull-request">
+    Corrections and improvements to `.md` files in `/content` and select `/data` directories.
+  </Card>
+  <Card title="Typo fixes in site policy" icon="scale-balanced">
+    Minor fixes to the site policy section published on docs.github.com.
+  </Card>
+  <Card title="Expanded explanations" icon="book-open">
+    New content that fills important gaps, when there is a compelling reason for the addition.
+  </Card>
+</CardGroup>
+
+## Issues
+
+Use [GitHub Issues](https://docs.github.com/en/github/managing-your-work-on-github/about-issues) to report problems or suggest improvements.
+
+Before opening a new issue:
+
+1. Search [open issues](https://github.com/github/docs/issues) to check whether the same thing has already been reported.
+2. If it hasn't been reported, open an issue using one of the available [issue templates](https://github.com/github/docs/issues/new/choose).
+3. The team will use the issue to discuss the problem before any work begins.
+
+<Note>
+  If an issue has a **triage** label, the team hasn't reviewed it yet. Do not begin work on triaged issues until a team member has confirmed the direction.
+</Note>
+
+## Pull requests
+
+[Pull requests](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests) are the way to suggest content changes. When a pull request is merged into the default branch, the changes are automatically deployed to the live site within 24 hours.
+
+Content pull requests are accepted for:
+
+- **`/content`** — All Markdown files that become docs.github.com pages.
+- **`/data/reusables`** — Reusable content snippets referenced across multiple pages.
+- **`/data/variables`** — Variables used in content (except `/data/variables/product.yml`).
+- **`/data/release-notes`** — Release note entries.
+- **`/data/glossaries/external.yml`** — External glossary terms.
+- **`/data/product-examples`** — Product example data.
+
+<Tip>
+  The fastest way to make a small fix — like a typo or a broken link — is to click **Make a contribution** at the bottom of any page on docs.github.com. This opens the file directly in the GitHub editor without needing to fork the repository locally.
+</Tip>
+
+### Content we do not accept
+
+Some contributions are outside the scope of what the team can review and maintain:
+
+- Edits made purely for tone, readability, or stylistic preference
+- Topics that are too niche or a matter of personal preference
+- Changes to the underlying site infrastructure, build tooling, or GitHub Actions workflows
+
+If you're unsure whether your proposed change falls within scope, open an issue to discuss it before writing the pull request.
+
+## REST API reference documentation
+
+The REST API reference docs on docs.github.com are generated automatically from the [github/rest-api-description](https://github.com/github/rest-api-description) repository. Pull requests to `github/docs` cannot change this content.
+
+If you find an inaccuracy in the REST API reference, open an issue in the [github/rest-api-description](https://github.com/github/rest-api-description/issues/new?template=schema-inaccuracy.md) repository instead.
+
+## Site policy
+
+GitHub's site policies are published on docs.github.com. You can open a pull request in `github/docs` to fix a typo in the site policy section.
+
+For any other site policy changes, see the [CONTRIBUTING guide in the site-policy repository](https://github.com/github/site-policy/blob/main/CONTRIBUTING.md).
+
+## Translations
+
+GitHub Docs is available in multiple languages, but **translated content is not accepted as external contributions**. Translations are handled through an automated internal process using professional translators. English is the source of truth for all content.
+
+See [Translations](/contributing/translations) for more detail on how the translation process works.
+
+## Support
+
+The docs team is not able to help with support questions in this repository. If you are experiencing a problem with GitHub that is unrelated to the documentation:
+
+- Contact [GitHub Support](https://support.github.com/contact) directly.
+- For account-specific issues, use [GitHub Support](https://support.github.com/contact?tags=docs-contributing-guide).
+
+Issues and pull requests opened here for support purposes will be redirected to GitHub Support, then closed and locked.

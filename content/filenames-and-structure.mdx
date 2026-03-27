@@ -1,0 +1,255 @@
+---
+title: Filenames and directory structure
+description: How the /content directory maps to URLs, filename conventions, index pages, link formats, and how to add new articles correctly.
+---
+
+The `/content` directory is the single source of truth for all English Markdown content on the GitHub Docs site. Its directory structure maps directly to the URL structure of the published site.
+
+## Directory layout
+
+```
+content/
+├── index.md                        # Homepage (docs.github.com/en)
+├── get-started/
+│   ├── index.md                    # docs.github.com/en/get-started
+│   ├── quickstart/
+│   │   ├── index.md
+│   │   └── hello-world.md
+│   └── learning-about-github/
+│       ├── index.md
+│       └── about-github-and-git.md
+├── actions/
+│   ├── index.md                    # docs.github.com/en/actions
+│   ├── quickstart.md
+│   └── using-workflows/
+│       ├── index.md
+│       └── workflow-syntax-for-github-actions.md
+└── codespaces/
+    ├── index.md
+    └── getting-started/
+        ├── index.md
+        └── quickstart.md
+```
+
+Every directory that has child pages needs an `index.md`. That file becomes the landing page for the directory URL and declares the navigation via its `children` frontmatter.
+
+<Tip>
+  Directory names for categories and map topics can match either the `title` or `shortTitle` frontmatter of the `index.md` inside.
+</Tip>
+
+## Filename conventions
+
+Filenames are the [kebab-case](https://en.wikipedia.org/wiki/Letter_case#Kebab_case) equivalent of the article's `title` frontmatter.
+
+| Title frontmatter | Filename |
+|---|---|
+| `About GitHub CLI` | `about-github-cli.md` |
+| `Getting started with GitHub Desktop` | `getting-started-with-github-desktop.md` |
+| `Workflow syntax for GitHub Actions` | `workflow-syntax-for-github-actions.md` |
+
+### Handling punctuation and Liquid variables
+
+When a title contains punctuation, omit it from the filename:
+
+```
+title: "GitHub's Billing Plans"  →  githubs-billing-plans.md
+```
+
+When a title contains a Liquid variable, use the words the variable renders as:
+
+```
+title: 'About {% data variables.product.prodname_emus %}'
+→  about-enterprise-managed-users.md
+```
+
+A test in CI validates that filenames and titles match. If the title legitimately cannot match the filename (for example, because it contains a Liquid variable), set [`allowTitleToDifferFromFilename: true`](/content/frontmatter#allowtitletodifferfromfilename) in frontmatter to suppress the check.
+
+## The index.md pattern
+
+Every product, category, and map topic directory must contain an `index.md`. This file:
+
+- Renders as the landing page for that URL segment.
+- Declares every child page through the `children` frontmatter array.
+- Is the only mechanism through which the site discovers nested pages.
+
+<Warning>
+  If a `.md` file exists on disk but is not listed in a parent `index.md` `children` array, its URL returns **404**. The site build does not crawl the filesystem — it walks the `children` graph.
+</Warning>
+
+A minimal `index.md`:
+
+```yaml
+---
+title: Using workflows
+intro: You can create workflows to automate your software development life cycle processes.
+versions:
+  fpt: '*'
+  ghes: '*'
+  ghec: '*'
+children:
+  - /about-workflows
+  - /triggering-a-workflow
+  - /workflow-syntax-for-github-actions
+  - /reusing-workflows
+---
+```
+
+## How content maps to URLs
+
+The path from `content/` to the file maps directly to the URL, with these rules:
+
+- The `/content` prefix is stripped.
+- File extensions (`.md`) are dropped.
+- `index.md` files become the bare directory URL.
+- On GitHub.com (`fpt`), the version segment (`free-pro-team@latest`) is removed from URLs automatically.
+
+| File path | Published URL |
+|---|---|
+| `content/actions/index.md` | `/en/actions` |
+| `content/actions/quickstart.md` | `/en/actions/quickstart` |
+| `content/actions/using-workflows/index.md` | `/en/actions/using-workflows` |
+| `content/actions/using-workflows/workflow-syntax-for-github-actions.md` | `/en/actions/using-workflows/workflow-syntax-for-github-actions` |
+
+On GitHub Enterprise Server, a version segment is inserted:
+
+```
+/en/enterprise-server@3.12/actions/quickstart
+```
+
+## Adding a new article
+
+<Steps>
+  <Step title="Create the Markdown file">
+    Create a `.md` file in the appropriate directory. Name it as the kebab-case version of the article title.
+
+    ```
+    content/actions/using-workflows/caching-dependencies-to-speed-up-workflows.md
+    ```
+  </Step>
+  <Step title="Write the frontmatter">
+    Add at minimum `title` and `versions`. Add `contentType`, `intro`, and any other relevant fields.
+
+    ```yaml
+    ---
+    title: Caching dependencies to speed up workflows
+    intro: To make your workflows faster and more efficient, you can create and use caches for dependencies and other commonly reused files.
+    versions:
+      fpt: '*'
+      ghes: '>=3.5'
+      ghec: '*'
+    contentType: how-tos
+    ---
+    ```
+  </Step>
+  <Step title="Add the article to the parent index.md">
+    Open the `index.md` in the same directory and add the new filename (without extension) to the `children` array.
+
+    ```yaml
+    children:
+      - /about-workflows
+      - /triggering-a-workflow
+      - /workflow-syntax-for-github-actions
+      - /caching-dependencies-to-speed-up-workflows   # ← new entry
+      - /reusing-workflows
+    ```
+  </Step>
+</Steps>
+
+## Link format requirements
+
+Links to other docs pages follow a strict format enforced by the build and validated in CI.
+
+### Internal links
+
+Internal links must:
+
+- Start with the **product ID** (the first path segment under `/content`, e.g. `/actions`, `/codespaces`, `/admin`).
+- Include the **full filepath** to the target article.
+- Omit the file extension.
+
+```markdown
+<!-- Correct -->
+[About GitHub Actions](/actions/learn-github-actions/understanding-github-actions)
+
+<!-- Incorrect — missing product ID -->
+[About GitHub Actions](learn-github-actions/understanding-github-actions)
+
+<!-- Incorrect — has file extension -->
+[About GitHub Actions](/actions/learn-github-actions/understanding-github-actions.md)
+```
+
+The site's link rewriter (`src/content-render/unified/rewrite-local-links.ts`) adds the correct language code and version segment at render time. For example:
+
+```
+/actions/quickstart
+  → /en/actions/quickstart                                   (GitHub.com)
+  → /en/enterprise-server@3.12/actions/quickstart            (GHES 3.12)
+```
+
+### AUTOTITLE for internal links
+
+Use the `AUTOTITLE` keyword instead of typing out link text manually. The site substitutes the target article's `title` frontmatter at render time, so link text stays accurate even if a title changes.
+
+```markdown
+For more information, see [AUTOTITLE](/actions/using-workflows).
+```
+
+<Note>
+  `AUTOTITLE` only works on internal links. Use normal link text for external URLs.
+</Note>
+
+### Linking to the same article in a different version
+
+To link from a `fpt` article to the equivalent `ghec` article:
+
+```markdown
+{% ifversion fpt %}
+For more information, see the [{% data variables.product.prodname_ghe_cloud %} documentation](/enterprise-cloud@latest/{{ currentArticle }}).
+{% endif %}
+```
+
+The `currentArticle` variable resolves to the path of the current page, so the link remains correct if the article URL changes.
+
+### Preventing version transforms
+
+By default, internal links are rewritten to match the current version. To link to a specific version regardless of context (for example, to pin a link to GitHub.com from an Enterprise article), include the version in the path:
+
+```markdown
+[GitHub's Terms of Service](/free-pro-team@latest/github/site-policy/github-terms-of-service)
+```
+
+### Image paths
+
+Image paths must start with `/assets` and include the full path with extension:
+
+```markdown
+![Screenshot of the settings page](/assets/images/help/settings/settings-account-delete.png)
+```
+
+## Whitespace control in Liquid
+
+When using Liquid conditionals inside Markdown lists or tables, extra blank lines break the rendering. Use the hyphen (`-`) whitespace control character to strip newlines adjacent to a Liquid tag.
+
+Without whitespace control, a versioned table row causes a rendering break:
+
+```
+Column A | Column B | Column C
+---------|----------|---------
+Row for all versions | B1 | C1{% ifversion ghes %}
+GHES-only row | B2 | C2{% endif %}
+Row for all versions | B3 | C3
+```
+
+With whitespace control, the Liquid tag sits on its own line without introducing extra newlines:
+
+```
+Column A | Column B | Column C
+---------|----------|---------
+Row for all versions | B1 | C1
+{%- ifversion ghes %}
+GHES-only row | B2 | C2
+{%- endif %}
+Row for all versions | B3 | C3
+```
+
+The `{%-` strips the newline to the **left** of the tag; `-%}` strips it to the **right**. You can apply them to one or both sides as needed.

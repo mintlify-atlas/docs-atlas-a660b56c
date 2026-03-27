@@ -1,97 +1,91 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "GitHub Docs"
+description: "The open-source repository powering docs.github.com — contribute to GitHub's official product documentation."
 ---
 
-## Setting up
+GitHub Docs is the open-source platform that powers [docs.github.com](https://docs.github.com). Anyone can contribute — whether you're fixing a typo, improving an explanation, or adding new content. This site documents how the docs platform works and how to contribute effectively.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Set up your environment and make your first contribution in minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Site architecture" icon="sitemap" href="/site-architecture">
+    Understand how the docs platform is structured — content, data, and source.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Writing content" icon="pen-to-square" href="/content/content-model">
+    Learn the content model, frontmatter, Liquid templating, and versioning.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Site engineering" icon="gear" href="/engineering/server-overview">
+    Explore the Next.js/Express server, REST pipeline, search, and data systems.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Get started contributing
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Set up your local environment">
+    Clone the repository, install Node.js dependencies, and build the site. See [Local setup](/development/setup) for full instructions.
+  </Step>
+  <Step title="Understand the content model">
+    All documentation lives in Markdown files under `content/`. Learn about [frontmatter](/content/frontmatter), [versioning](/content/versioning), and [Liquid helpers](/content/liquid-helpers).
+  </Step>
+  <Step title="Make your changes">
+    Edit or add Markdown files, run the linter with `npm run lint-content`, and preview your changes locally at `localhost:4000`.
+  </Step>
+  <Step title="Open a pull request">
+    Submit your changes following the [contribution guidelines](/contributing/pull-requests). Changes deploy to production within 24 hours of merge.
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Key features
 
-## Need inspiration?
+<CardGroup cols={2}>
+  <Card title="Multi-version docs" icon="code-branch" href="/content/versioning">
+    Content is versioned across GitHub.com, GitHub Enterprise Server, and GitHub Enterprise Cloud using Liquid conditionals.
+  </Card>
+  <Card title="Automated API docs" icon="rotate" href="/engineering/rest-pipeline">
+    REST, GraphQL, and Webhook reference docs are auto-generated from OpenAPI specs via automated pipelines.
+  </Card>
+  <Card title="Full-text search" icon="magnifying-glass" href="/engineering/search">
+    Elasticsearch-powered search indexes all docs content and is available in multiple languages.
+  </Card>
+  <Card title="Content linting" icon="check" href="/content/content-linter">
+    Custom markdownlint rules enforce style, structure, and quality across all documentation.
+  </Card>
+  <Card title="Liquid templating" icon="brackets-curly" href="/content/liquid-helpers">
+    Use Liquid tags for versioning, reusables, variables, tool switching, and platform targeting.
+  </Card>
+  <Card title="Internationalization" icon="globe" href="/contributing/translations">
+    Docs are translated into multiple languages through an automated workflow with professional translators.
+  </Card>
+</CardGroup>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+## Two ways to contribute
+
+<Tabs>
+  <Tab title="Content contributions">
+    Content contributions are the most common way to help. You can edit `.md` files in the `/content` directory and select `/data` sections (reusables and variables) directly on GitHub or via a local clone.
+
+    **Accepted content contributions:**
+    - Fix typos and grammatical errors
+    - Improve clarity or accuracy of existing articles
+    - Add missing information to existing topics
+    - Update outdated content
+
+    <Note>The `docs` repository accepts contributions to content files only. Infrastructure, workflows, and site-building code changes should go to `docs-internal`.</Note>
+  </Tab>
+  <Tab title="Codespaces">
+    Use GitHub Codespaces to contribute entirely from your browser — no local setup required. Open the repo in a codespace and you'll have a fully configured development environment in minutes.
+
+    ```bash
+    # Or clone and run locally
+    git clone https://github.com/github/docs
+    cd docs
+    npm ci
+    npm run build
+    npm start
+    ```
+
+    Visit [localhost:4000](http://localhost:4000) to preview the site.
+  </Tab>
+</Tabs>

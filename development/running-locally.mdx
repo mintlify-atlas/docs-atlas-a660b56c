@@ -1,0 +1,158 @@
+---
+title: "Running the site locally"
+description: "Start the development server, configure languages, use the fixture server, and understand hot reload behavior."
+---
+
+After completing the [local setup](/development/setup), you can start the development server and browse the docs site at `http://localhost:4000`.
+
+## Starting the server
+
+```bash
+npm start
+```
+
+This runs:
+
+```
+cross-env NODE_ENV=development ENABLED_LANGUAGES=en nodemon src/frame/server.ts
+```
+
+The server starts on **port 4000** with `NODE_ENV=development` and English content enabled. nodemon watches for file changes and restarts the server automatically.
+
+<Tip>
+  `npm start` and `npm run dev` are equivalent — both invoke the same command.
+</Tip>
+
+To stop the server at any time, press <kbd>Ctrl</kbd>+<kbd>C</kbd> in your terminal.
+
+## Starting the server in debug mode
+
+Use `npm run debug` to start the server with the Node.js inspector attached:
+
+```bash
+npm run debug
+```
+
+This runs:
+
+```
+cross-env NODE_ENV=development ENABLED_LANGUAGES=en nodemon --inspect src/frame/server.ts
+```
+
+The `--inspect` flag enables the V8 inspector protocol on `127.0.0.1:9229`. You can then attach a debugger from VS Code or Chrome DevTools. See [Debugging](/development/debugging) for a step-by-step guide.
+
+## Enabling additional languages
+
+By default, the server only loads English content (`ENABLED_LANGUAGES=en`). Loading all languages at startup would significantly increase memory usage and startup time.
+
+To enable one or more additional languages, set `ENABLED_LANGUAGES` before starting the server:
+
+<CodeGroup>
+
+```bash Japanese and Portuguese
+ENABLED_LANGUAGES=en,ja,pt npm start
+```
+
+```bash All languages
+ENABLED_LANGUAGES=en,es,ja,pt,zh,ru,fr,ko,de npm start
+```
+
+```bash English only (default)
+npm start
+```
+
+</CodeGroup>
+
+You can also set `ENABLED_LANGUAGES` in your `.env` file to avoid typing it every time.
+
+<Note>
+  Restart the server after changing `ENABLED_LANGUAGES`. The application reads this variable at startup and does not reload it on the fly.
+</Note>
+
+### Supported language codes
+
+The full set of language codes is defined in `src/languages/lib/languages.ts`:
+
+| Code | Language |
+| ---- | -------- |
+| `en` | English |
+| `es` | Spanish (Español) |
+| `ja` | Japanese (日本語) |
+| `pt` | Portuguese (Português do Brasil) |
+| `zh` | Simplified Chinese (简体中文) |
+| `ru` | Russian (Русский) |
+| `fr` | French (Français) |
+| `ko` | Korean (한국어) |
+| `de` | German (Deutsch) |
+
+## Serving all languages without nodemon
+
+If you want to run with all languages enabled and skip nodemon's restart overhead, use:
+
+```bash
+npm run start-all-languages
+```
+
+This runs `tsx src/frame/server.ts` directly with `NODE_ENV=development` and no `ENABLED_LANGUAGES` restriction — meaning all supported languages are served.
+
+## Using the fixture dev server
+
+The fixture server loads a lightweight set of test content from `src/fixtures/fixtures` instead of the full content tree. It starts much faster and is useful when working on application code rather than documentation content.
+
+```bash
+npm run fixture-dev
+```
+
+This is equivalent to:
+
+```
+cross-env ROOT=src/fixtures/fixtures npm start
+```
+
+A debug variant is also available:
+
+```bash
+npm run fixture-dev-debug
+```
+
+<Tip>
+  Use the fixture server when you're iterating on server logic, middleware, or rendering behavior and don't need the full content tree loaded.
+</Tip>
+
+## Hot reload behavior
+
+The server uses [nodemon](https://nodemon.io/) to watch for changes and restart automatically. The watch configuration is in `package.json` under `"nodemonConfig"`:
+
+**Watched file extensions:** `ts`, `json`, `yml`, `md`, `html`, `scss`
+
+**Directories ignored by nodemon** (changes here do not trigger a restart):
+
+- `assets/`
+- `script/`
+- `tests/`
+- `content/`
+- `translations/`
+- `data/reusables/`
+- `data/variables/`
+- `data/glossaries/`
+- `data/product-examples/`
+- `data/learning-tracks/`
+- `rest-api-description/`
+- `semmle-code/`
+
+<Warning>
+  Changes to files inside `content/` and `data/` do **not** trigger a server restart. The server reads content dynamically on each request, so you can edit Markdown and Liquid files and refresh your browser to see the result without waiting for a restart.
+</Warning>
+
+Changes to TypeScript source files in `src/`, configuration files, or schema files will trigger nodemon to restart the server. Watch the terminal output to confirm the restart has completed before refreshing your browser.
+
+## Command reference
+
+| Command | Description |
+| ------- | ----------- |
+| `npm start` | Start the dev server on port 4000 (English only) |
+| `npm run dev` | Alias for `npm start` |
+| `npm run debug` | Start with Node.js inspector on port 9229 |
+| `npm run start-all-languages` | Start without language restriction, no nodemon |
+| `npm run fixture-dev` | Start with fixture content (faster startup) |
+| `npm run fixture-dev-debug` | Fixture server with Node.js inspector |

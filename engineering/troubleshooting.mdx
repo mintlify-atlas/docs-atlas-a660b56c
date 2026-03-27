@@ -1,0 +1,208 @@
+---
+title: 'Troubleshooting'
+description: 'Solutions to common issues contributors encounter when working on the GitHub Docs codebase.'
+---
+
+<Note>
+The canonical version of the contributor troubleshooting guide lives at [docs.github.com/contributing/setting-up-your-environment-to-work-on-github-docs/troubleshooting-your-environment](https://docs.github.com/en/contributing/setting-up-your-environment-to-work-on-github-docs/troubleshooting-your-environment). This page covers engineering-specific issues not addressed there.
+</Note>
+
+## Failed status checks
+
+If a required check fails on your PR, read the full log before asking for help. Most failures have a specific error message that points to the root cause.
+
+<AccordionGroup>
+  <Accordion title="Content lint failures">
+    The content linter enforces style and structure rules on Markdown files. Run it locally to see the same errors CI sees:
+
+    ```bash
+    npm run lint-content -- --paths content/path/to/file.md
+    ```
+
+    Common causes:
+    - Incorrect heading hierarchy (skipping from `##` to `####`)
+    - Use of raw HTML instead of Liquid or Markdown equivalents
+    - Broken internal links
+    - Missing or invalid frontmatter fields
+
+    Run the linter on the entire content directory to catch all issues:
+
+    ```bash
+    npm run lint-content
+    ```
+  </Accordion>
+
+  <Accordion title="TypeScript errors (tsc check)">
+    Run the type checker locally to reproduce the error:
+
+    ```bash
+    npm run tsc
+    ```
+
+    This runs `tsc --noEmit` and reports all type errors without emitting output files.
+  </Accordion>
+
+  <Accordion title="Link check failures">
+    The link checker validates internal and external links. Run it locally:
+
+    ```bash
+    npm run check-links-internal
+    npm run check-links-external
+    ```
+
+    Internal link failures are often caused by a page being referenced that does not exist yet, or a redirect not being set up after moving content.
+  </Accordion>
+
+  <Accordion title="Test failures">
+    Run the failing test suite locally using the subject name:
+
+    ```bash
+    npm test -- src/SUBJECT/tests
+    ```
+
+    For fixture-dependent tests, use:
+
+    ```bash
+    npm run fixture-test -- src/fixtures/tests
+    ```
+
+    See [Testing](/engineering/testing) for the full list of test aliases.
+  </Accordion>
+</AccordionGroup>
+
+## Stalled status checks
+
+A status check that never starts (stuck in "queued" state) is different from one that fails.
+
+- **Required checks that never start** may indicate a workflow concurrency issue. Cancelling the stuck run and re-running it often resolves this.
+- **The merge queue check** can stall if a PR earlier in the queue has a blocking failure. Check the merge queue status page for the repository.
+- If a check is stuck for more than 30 minutes, ping `@github/docs-engineering` in `#docs-engineering`.
+
+## Node.js version issues
+
+The project requires Node.js version 24 or higher, as specified in `package.json`:
+
+```json
+"engines": {
+  "node": "^24"
+}
+```
+
+If you see unexpected errors on startup or during tests, verify your Node.js version:
+
+```bash
+node --version
+```
+
+Use a version manager like [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) to switch versions:
+
+```bash
+nvm use 24
+# or
+fnm use 24
+```
+
+## Build failures
+
+If `npm run build` fails:
+
+<Steps>
+  <Step title="Clear the Next.js cache">
+    ```bash
+    rm -rf .next
+    ```
+  </Step>
+
+  <Step title="Reinstall dependencies">
+    ```bash
+    rm -rf node_modules && npm ci
+    ```
+  </Step>
+
+  <Step title="Run the build again">
+    ```bash
+    npm run build
+    ```
+
+    Check the error output carefully — Next.js build errors often include the file and line number of the problem.
+  </Step>
+</Steps>
+
+## Search not working locally
+
+The search feature requires a running Elasticsearch instance. Without it, search returns no results and `test:search` fails.
+
+```bash
+# Start Elasticsearch locally (Docker)
+docker run -p 9200:9200 \
+  -e "discovery.type=single-node" \
+  docker.elastic.co/elasticsearch/elasticsearch:8.19.1
+```
+
+The Elasticsearch version must match `@elastic/elasticsearch` in `package.json` (currently `8.19.1`).
+
+Once running, set the URL in your environment:
+
+```bash
+ELASTICSEARCH_URL=http://localhost:9200/ npm run test:search
+```
+
+For a full local search experience, you also need to index content:
+
+```bash
+npm run index-general-search
+```
+
+## Pages returning 404 locally
+
+A page returns 404 if it exists as a Markdown file but is not listed in the `children` frontmatter of its parent `index.md`.
+
+Check the parent directory's `index.md` for a `children:` list. If your file is not in that list, add it:
+
+```markdown
+---
+title: My section
+children:
+  - /my-section/existing-page
+  - /my-section/your-new-page   # Add this
+---
+```
+
+<Note>
+This is enforced by the content linter. A missing `children` entry will also cause a lint failure in CI.
+</Note>
+
+## Missing content after auto-sync
+
+If content is missing after running a sync script (REST, GraphQL, webhooks), check:
+
+1. The sync script completed without errors
+2. The generated files in `src/*/data/` were updated
+3. Your local server was restarted — the dev server does not hot-reload data files in all cases
+
+Restart the dev server after running any sync script:
+
+```bash
+npm start
+```
+
+## Debugging the local server
+
+For an interactive debugger session:
+
+```bash
+npm run debug
+```
+
+This starts the server with `--inspect` and `NODE_ENV=development`. Attach a debugger using the Node.js inspector protocol (Chrome DevTools or VS Code).
+
+## Getting help
+
+<CardGroup cols={2}>
+  <Card title="Open an issue" icon="circle-dot" href="https://github.com/github/docs-engineering/issues/new">
+    For bugs, unexpected behavior, or persistent failures. Use `github/docs-engineering` for engineering issues.
+  </Card>
+  <Card title="Docs Engineering Slack" icon="slack">
+    For internal staff: post in `#docs-engineering`. For urgent issues affecting production, tag `@github/docs-engineering`.
+  </Card>
+</CardGroup>

@@ -1,0 +1,70 @@
+---
+title: 'Deployments'
+description: 'How changes to the docs codebase are deployed to staging and production.'
+---
+
+Staging and production deployments are fully automated by a deployer service built and maintained by `@github/docs-engineering`. You do not manually trigger deployments — merging a pull request is sufficient.
+
+## Two repositories
+
+GitHub Docs runs from two separate repositories:
+
+| Repository | Visibility | Purpose |
+|---|---|---|
+| `github/docs` | Public | Open-source contributions, public content |
+| `github/docs-internal` | Private | Internal features, early access content, staff-only changes |
+
+Both repositories follow the same deployment process described on this page.
+
+## Merge queue
+
+The `main` branch on both repositories is protected by a **merge queue**. You cannot merge a pull request directly into `main` — the queue validates and batches merges automatically.
+
+<Note>
+If your PR appears stuck waiting to merge, check the merge queue status on the PR page. The queue runs required checks before allowing the merge.
+</Note>
+
+## Production deployments
+
+When a pull request is merged to `main`, deployment to production is triggered automatically. The deployment status is visible directly on the PR page on github.com.
+
+**It can take up to 24 hours for changes to be visible on the live site.** This is normal and expected — do not open a follow-up PR to re-apply a change that was already merged.
+
+<Tip>
+To verify that your change is live, check the PR page for a successful deployment status indicator.
+</Tip>
+
+## Branch deletion
+
+After a pull request is closed (merged or otherwise), the branch is **automatically deleted**. You do not need to delete it manually. This does not affect the deployment process.
+
+## Review and staging environments
+
+Review environments are provisioned for pull requests so you can preview changes before merge.
+
+<Note>
+Review environment details are maintained by `@github/docs-engineering`. Contact the team in `#docs-engineering` if review environments are not loading for your PR.
+</Note>
+
+## Clearing the Fastly edge cache
+
+The docs site is served through Fastly as an edge cache layer. If you need to force-purge the cache — for example, after a critical content correction — run:
+
+```bash
+npm run purge-fastly-edge-cache
+```
+
+<Warning>
+Cache purges affect production traffic globally. Only run this when necessary and coordinate with `@github/docs-engineering` beforehand.
+</Warning>
+
+## Checking deployment status
+
+You can monitor the deployment for any merged PR directly on its page on github.com. Look for the deployment status in the PR timeline or in the **Environments** section of the repository.
+
+If a deployment is stalled or failed, contact `@github/docs-engineering` in the `#docs-engineering` Slack channel.
+
+## Getting help
+
+- Slack: `#docs-engineering`
+- Team: `@github/docs-engineering`

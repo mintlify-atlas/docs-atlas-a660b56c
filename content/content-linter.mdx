@@ -1,0 +1,257 @@
+---
+title: Content linter
+description: How to run the GitHub Docs content linter, what it checks, and how to fix or suppress lint errors.
+---
+
+The GitHub Docs content linter enforces style guide rules in Markdown source files. It runs automatically before every commit and in CI, and you can also run it manually at any time.
+
+## How it works
+
+The linter uses [markdownlint](https://github.com/DavidAnson/markdownlint) as its framework. On top of the standard markdownlint rules, GitHub Docs adds custom rules that check Markdown and Liquid syntax specific to this repository. Rules are defined in four layers:
+
+- **Native markdownlint rules** — configured in `src/content-linter/style/base.ts`
+- **GitHub markdown linters** — from [markdownlint-github](https://github.com/github/markdownlint-github)
+- **Search-replace checks** — simple string/regex patterns in `src/content-linter/style/github-docs.ts`
+- **Custom docs rules** — individual files in `src/content-linter/lib/linting-rules/`
+
+Custom rule IDs use the `GHD###` format (for example, `GHD038`). Rules from markdownlint use the `MD###` format (for example, `MD011`).
+
+## Severity levels
+
+Every rule has one of two severities:
+
+| Severity | Effect |
+|----------|--------|
+| `error` | Prevents the commit from completing. Must be fixed before merging. |
+| `warning` | Reported but does not block a commit or merge. Should be fixed when possible. |
+
+Most rules start as warnings and are promoted to errors once existing violations are resolved across the content.
+
+## Running the linter
+
+### Automatically on pre-commit
+
+When you commit staged files from the command line, the linter runs automatically via a pre-commit hook (powered by `lint-staged`). Both warnings and errors are reported, but only errors prevent the commit from completing.
+
+If errors are reported, fix them, re-add the changed files, and commit again.
+
+<Note>
+  When editing files in the GitHub UI, the pre-commit hook does not run. CI will still report any `error`-severity violations.
+</Note>
+
+### Manually on staged and changed files
+
+Run the linter on all files you have staged or changed:
+
+```shell
+npm run lint-content
+```
+
+To report only `error`-severity violations (skip warnings):
+
+```shell
+npm run lint-content -- --errors
+```
+
+### On specific files or directories
+
+Run the linter on one or more specific paths. Separate multiple paths with a space:
+
+```shell
+npm run lint-content -- \
+  --paths content/actions/creating-actions/about-custom-actions.md content/get-started
+```
+
+### Auto-fix errors
+
+Some rules are fixable automatically. When a rule has `fixable: true` in its description, you can apply fixes automatically.
+
+Fix staged and changed files:
+
+```shell
+npm run lint-content -- --fix
+```
+
+Fix specific files or directories:
+
+```shell
+npm run lint-content -- \
+  --fix --paths content/FILENAME.md content/DIRECTORY
+```
+
+### Run specific rules
+
+To test a particular rule or set of rules, pass their names with `--rules`. You can use either the short name (`MD001`) or the long name (`heading-increment`):
+
+```shell
+npm run lint-content -- \
+  --rules heading-increment code-fence-line-length
+```
+
+Run specific rules on specific paths:
+
+```shell
+npm run lint-content -- \
+  --rules image-alt-text-length image-no-gif \
+  --paths content/actions
+```
+
+### View all options
+
+```shell
+npm run lint-content -- --help
+```
+
+## What the linter checks
+
+The custom rules in `src/content-linter/lib/linting-rules/` cover these categories:
+
+<AccordionGroup>
+  <Accordion title="Images">
+    - `image-alt-text-end-punctuation` — Alt text must end with punctuation.
+    - `image-alt-text-exclude-start-words` — Alt text must not start with "Image" or "Graphic."
+    - `image-alt-text-length` — Alt text must be between 40 and 150 characters.
+    - `image-file-kebab-case` — Image filenames must use kebab-case.
+    - `image-no-gif` — Animated GIFs are not allowed in the docs.
+  </Accordion>
+  <Accordion title="Links">
+    - `internal-links-no-lang` — Internal links must not include a language code prefix like `/en/`.
+    - `internal-links-old-version` — Internal links must not reference deprecated version paths.
+    - `internal-links-slash` — Internal links must start with a forward slash.
+    - `link-punctuation` — Punctuation must not be included inside link brackets.
+    - `link-quotation` — Links must not be wrapped in quotation marks.
+  </Accordion>
+  <Accordion title="Liquid and versioning">
+    - `liquid-data-tags` — Liquid `{% data %}` tags must reference valid data paths.
+    - `liquid-ifversion-versions` — `{% ifversion %}` conditions must use valid version names.
+    - `liquid-quoted-conditional-arg` — Liquid conditional arguments must not be quoted.
+    - `liquid-syntax` — Liquid tags must be syntactically valid.
+    - `liquid-tag-whitespace` — Liquid tags must have proper internal whitespace.
+    - `liquid-versioning` — Liquid versioning blocks must follow correct patterns.
+    - `table-liquid-versioning` — Liquid versioning inside tables must be properly formed.
+  </Accordion>
+  <Accordion title="Frontmatter">
+    - `frontmatter-schema` — Frontmatter must conform to the required schema.
+    - `frontmatter-versions-whitespace` — Frontmatter version values must not have extraneous whitespace.
+    - `frontmatter-curly-quotes` — Frontmatter must not contain curly quotes.
+    - `frontmatter-content-type` — The `contentType` frontmatter field must use a valid content type.
+    - `frontmatter-hidden-docs` — Hidden docs must follow the correct pattern.
+    - `frontmatter-children` — The `children` frontmatter on index pages must be valid.
+    - `frontmatter-hero-image` — Hero images on landing pages must meet requirements.
+    - `frontmatter-intro-links` — Intro text must not contain links.
+    - `frontmatter-landing-carousels` — Landing page carousel data must be valid.
+    - `frontmatter-video-transcripts` — Video transcript frontmatter must be valid.
+  </Accordion>
+  <Accordion title="Code">
+    - `code-annotation-comment-spacing` — Code annotation comments must have correct spacing.
+    - `code-annotations` — Code annotation syntax must be valid.
+    - `yaml-scheduled-jobs` — Scheduled workflow examples must not run on congested times (e.g., on the hour).
+    - `third-party-action-pinning` — Third-party actions must be pinned to a full-length commit SHA.
+    - `third-party-actions-reusable` — Third-party action disclaimers must use the approved reusable.
+    - `github-owned-action-references` — First-party actions must use reusables instead of hardcoded version tags.
+  </Accordion>
+  <Accordion title="Single-source and variables">
+    - `hardcoded-data-variable` — Product names must use Liquid variables, not plain text strings.
+    - `outdated-release-phase-terminology` — Release phase terms must use current approved language.
+    - `early-access-references` — Early access content must not appear in public docs.
+  </Accordion>
+  <Accordion title="Journey tracks">
+    - `journey-tracks-guide-path-exists` — Every guide path referenced in `journeyTracks` must exist.
+    - `journey-tracks-liquid` — Journey track titles and descriptions must use valid Liquid syntax.
+    - `journey-tracks-unique-ids` — Journey track `id` values must be unique within a page.
+  </Accordion>
+  <Accordion title="Responsible AI (RAI)">
+    - `rai-app-card-structure` — RAI app card components must follow the correct structure.
+    - `rai-reusable-usage` — RAI content must use the approved reusables.
+  </Accordion>
+  <Accordion title="Tables">
+    - `table-column-integrity` — Table columns must have consistent widths and separators.
+    - `table-liquid-versioning` — Liquid versioning inside tables must be properly formed.
+  </Accordion>
+  <Accordion title="Content calls to action (CTAs)">
+    - `ctas-schema` — CTA frontmatter must conform to the required schema.
+  </Accordion>
+  <Accordion title="Expiring content">
+    - `expired-content` — Warns 14 days before an expiration date and flags content that has passed its expiration date.
+  </Accordion>
+</AccordionGroup>
+
+## Tagging content with an expiration date
+
+When you must include content that will become outdated, wrap it in expiration HTML comments. The linter will warn you 14 days before the date and flag it for remediation on or after the date.
+
+```markdown
+This content does not expire.
+<!-- expires 2025-06-30 -->
+This content expires on June 30, 2025.
+<!-- end expires 2025-06-30 -->
+This content also does not expire.
+```
+
+For content inside HTML tables, place the expiration tags around the entire row:
+
+```html
+<!-- expires 2025-06-30 -->
+<tr>
+  <td>macOS</td>
+  <td>The <code>macos-11</code> label is closing down after June 30, 2025.</td>
+</tr>
+<!-- end expires 2025-06-30 -->
+```
+
+## Suppressing rules
+
+Occasionally you may need to document something that intentionally violates a lint rule. Suppress only the specific rules needed, not all rules.
+
+| Comment | Effect |
+|---------|--------|
+| `<!-- markdownlint-disable-line MD011 -->` | Disable specific rule for the current line |
+| `<!-- markdownlint-disable-next-line MD011 -->` | Disable specific rule for the next line |
+| `<!-- markdownlint-disable MD011 -->` | Disable rule from this point |
+| `<!-- markdownlint-enable MD011 -->` | Re-enable the rule |
+| `<!-- markdownlint-disable -->` | Disable all rules from this point |
+| `<!-- markdownlint-enable -->` | Re-enable all rules |
+
+**Example:** Suppressing a false positive on a regular expression that looks like a reversed link:
+
+```markdown
+(^|/)[Cc]+odespace/ <!-- markdownlint-disable-line MD011 -->
+```
+
+For content inside a code block:
+
+````markdown
+<!-- markdownlint-disable MD011 -->
+```
+(^|/)[Cc]+odespace/
+```
+<!-- markdownlint-enable MD011 -->
+````
+
+<Note>
+  The `search-replace` plugin does not support disabling individual rules. To suppress a search-replace violation, disable the entire plugin with `<!-- markdownlint-disable-line search-replace -->`.
+</Note>
+
+## Bypassing the pre-commit hook
+
+If the linter catches errors that you did not introduce (for example, in a file you only partially modified), you can bypass the git pre-commit hook with `--no-verify`:
+
+```shell
+git commit -m 'MESSAGE' --no-verify
+```
+
+<Warning>
+  Only bypass the hook when you are certain you did not introduce the flagged errors. Errors that are bypassed locally will still fail in CI.
+</Warning>
+
+## Custom rule locations
+
+| Location | Purpose |
+|----------|---------|
+| `src/content-linter/lib/linting-rules/` | Individual TypeScript files for each custom rule |
+| `src/content-linter/lib/linting-rules/index.ts` | Imports and exports all custom rules |
+| `src/content-linter/style/github-docs.ts` | Configures all rules, sets severities |
+| `src/content-linter/style/base.ts` | Configures native markdownlint rules |
+| `src/content-linter/tests/unit/` | Unit tests for custom rules |
+
+Rule IDs in the `GHD03X` range are candidates for upstreaming to the markdownlint community.
